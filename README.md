@@ -10,7 +10,7 @@ The goal of this study was to:
 
 By:
 * homogenising diverse metabarcoding datasets into a global dataset
-* clustering sequences based on 
+* clustering sequences based on similarity by a Se
 
 
 
