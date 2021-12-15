@@ -10,9 +10,8 @@ The goal of this study was to:
 
 By:
 * homogenising diverse metabarcoding datasets into a global dataset
-* clustering sequences based on similarity by a Se
-
-
+* clustering the sequences of the global dataset together based on similarity with a Sequence Similarity Network
+* exploring spatial and temporal distribution patterns of unknown sequence clusters
 
 ## Abstract
 
