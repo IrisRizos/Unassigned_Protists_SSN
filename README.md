@@ -14,14 +14,16 @@ By:
 * clustering the sequences of the global dataset together based on similarity with a Sequence Similarity Network
 * exploring spatial and temporal distribution patterns of unknown sequence clusters
 
+
+The studied datasets are:
+
+* hhh, (ref)
+
 ## Abstract
 
 
 ## Prerequisites
 
-The studied datasets are:
-
-* hhh
 
 ```
 hdjdjsj
