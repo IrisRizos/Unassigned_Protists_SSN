@@ -1,4 +1,4 @@
-# Exploring the realm of unknown taxonomic protist diversity: parasites in the spotlight
+# Exploring the marine realm of unassigned taxonomic protist diversity: parasites in the spotlight
 
 Exploration of unknown protist sequences across different metabarcoding datasets. 
 
