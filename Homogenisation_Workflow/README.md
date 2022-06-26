@@ -57,8 +57,8 @@ sbatch launch_short_working_script.sh merge_table.py -f1 ASV_names.csv -f2 Datas
 
 Headers were added to names and top hit files before hand:
 ```
-sed -i '1iASV;GenBank_id|rRNA|nucleus|Kingdom|Supergroup|Division|Class|Order|Family|Genus|Species' Mal_blast_top_hit.csv
-sed -i '1iASV' Mal_ASV_names.csv
+sed -i '1iASV;GenBank_id|rRNA|nucleus|Kingdom|Supergroup|Division|Class|Order|Family|Genus|Species' Dataset_blast_top_hit.csv
+sed -i '1iASV' ASV_names.csv
 ```
 
 ## Step 3:
