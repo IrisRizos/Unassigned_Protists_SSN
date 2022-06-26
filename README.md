@@ -1,25 +1,27 @@
 # Exploring the marine realm of unassigned taxonomic protist diversity: parasites in the spotlight
 
-Exploration of unknown protist sequences across different metabarcoding datasets. 
+Exploration of taxinomically unassigned protist barcode sequences across different V4-18S datasets. 
 
 
-The goal of this study was to:
-* describe the overall proportion of protist sequences which are taxonomically unknown in metabarcoding studies
-* identify protist lineages are “the most unknown”
-* identify environments rich in unknown diversity ⇒ concentrate sampling efforts
-* get a list of most abundant, community-representative and recurrent unknowns to be prioritized for identification
+The goal of this study is to:
+* Describe the overall proportion of protist sequences which lack taxinomic description from reference databases
+* Identify protist lineages that are the least described across 6 metabarcoding datasets
+* Reveal geographic distribution patterns of parasitic dinoflagellates that are unassigned at the genus level (i.e. 98% of sequences!)
+* Get a list of most abundant and recurrent (through 10 years data) community-indicator parasite taxa to be prioritized for identification
 
 By:
-* homogenising diverse metabarcoding datasets into a global dataset
-* clustering the sequences of the global dataset together based on similarity with a Sequence Similarity Network
-* exploring spatial and temporal distribution patterns of unknown sequence clusters
+* Homogenising diverse metabarcoding datasets (time-series and oceanographic campaigns) into a global dataset
+* Clustering the sequences of the global dataset together based on similarity with a Sequence Similarity Network
+* Exploring spatial and temporal distribution patterns of unassigned sequence clusters at a selected taxonomic level and for a selected protist group
 
-
-The studied datasets are:
-
-* hhh, (ref)
 
 ## Abstract
+
+
+## Data
+
+
+
 
 
 ## Prerequisites
@@ -29,5 +31,13 @@ The studied datasets are:
 hdjdjsj
 ```
 
+## What about your protist group of interest ?
+
+This protocol can be freely re-used to explore the spatiotemporal patterns of any protist group in the network ! The steps are the following:
+* Indicate the taxonomic level and id of the group (e.g. Class==Syndiniales) in the script: this will subtract from the netwrok only the clusters (Connected Components) composed of your chosen group along with their metadata.
+* Run scripts XX...
+
+
+It is also possible to implement your own sequences and see how they clusterise among the SSN. Just note that a computation time of 1 week is required (job run in parallel on X nodes, CPU, RAM...) to run the all-against-all alignment with the updated sequence dataset + 1-2h for network creation by igraph. After that, you can catch up the protocol from the clusterisation step (Script: XX).
 
 
