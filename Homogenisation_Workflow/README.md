@@ -41,6 +41,7 @@ awk -F ";" '!/^ASV_/ {print$0} ; /^ASV_/ {for (i=1;i<NF;i++) {if($i!="Unknown" &
 * PR2 taxonomic assignment:
 
 Version: pr2_version_4.12.0_18S_taxo_long.fasta
+
 Scripts: mkdb_PR2.sh, PR2_blast.sh
 
 Best hits were kept: 
@@ -71,6 +72,7 @@ awk -F ";" 'NR==1 {print$0} ; NR>1 && length($i)>200 {print$0}' ASV_filt_PR2.csv
 * SILVA taxonomic assignemnt of sequences unasssigned at the Kingdom level:
 
 Vesrion: silva_nr99_v138_wSpecies_train_set.fa.gz
+
 Scripts: Dada2_Freestyle.R
 
 Sequences to be assigned were selected and linearised:
@@ -81,3 +83,4 @@ awk '/^>/ {printf("%s%s\t",(N>0?"\n":""),$0);N++;next;} {printf("%s",$0);} END {
 
 The assignment and occurence (dataset and depth) of the sequences was studied (cf. Normalisation_Alpha_div_Abund.Rmd).
 
+### All scripts and analysis were performed on ABiMS cluster of the Roscoff Marine station (http://abims.sb-roscoff.fr).
