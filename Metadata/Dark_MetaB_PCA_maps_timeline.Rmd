@@ -1,0 +1,157 @@
+---
+title: "Exploration of metadata: unassigned metaB"
+author: "Iris Rizos"
+date: "13/04/2022"
+output: 
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=T, results='hide'}
+# setwd("/shared/projects/formaldark/R_igraph/Final_files/")
+
+# Import packages
+# Maps
+library(maps)
+library(tidyverse)
+library(sp)
+# Timeline
+library(reshape2)
+# PCA
+library(tidyr)
+library(ade4)
+library(factoextra)
+# Plots
+library(ggplot2)
+library(ggsci)
+library(gridExtra)
+```
+
+## 1. Maps of samples in global dataset
+
+```{r}
+world <- map_data("world", bg='blue')
+
+## MOOSE, SOLA, ASTAN and BBMO (Blanes) samples ##
+don1 = read.csv("/shared/projects/formaldark/Data_stageM2/MooAstSolBlan_map.csv", header = TRUE, sep = ";")
+
+# summary(don1)
+
+MAP1 <- ggplot() + 
+  geom_polygon(data = world, aes(x = long, y = lat, group = group), color = "wheat3", fill = "wheat3") +
+  geom_point(data = don1, aes(x = Longitude, y = Latitude, color = Dataset), size = 2.5) +
+  coord_fixed(1, xlim = c(-5, 11), ylim = c(39, 50)) + theme_linedraw() + 
+  scale_colour_manual(values = c("SOLA"="darkolivegreen4", "ASTAN"="dimgrey", "MOOSE"="darkorange3", "BBMO"="orange1")) + 
+  ylab("Latitude") + xlab("Longitude") + theme(axis.text=element_text(size=13)) + 
+  theme(legend.title = element_text(size = 15), legend.text = element_text(size = 15), legend.position = "top")
+
+## Map of Malaspina and BioMarKs ##
+don2 = read.csv("/shared/projects/formaldark/Data_stageM2/Malaspina_Biomarks_map.csv", header = TRUE, sep = ";")
+
+# summary(don2)
+
+MAP2 <- ggplot() + 
+  geom_polygon(data = world, aes(x = long, y = lat, group = group), color = "wheat3", fill = "wheat3") +
+  geom_point(data = don2, aes(x = Longitude, y = Latitude, color = Dataset), size = 1.2) +
+  coord_fixed(1, xlim = c(-170, 170), ylim = c(-80, 80)) + theme_linedraw() + 
+  scale_colour_manual(values = c("Malaspina"="dodgerblue4", "BioMarKs"="red4")) + 
+  ylab("Latitude") + xlab("Longitude") + theme(axis.text=element_text(size=13))+ 
+  theme(legend.title = element_text(size = 15), legend.text = element_text(size = 15), legend.position = "top")
+
+plot(MAP1)
+
+plot(MAP2)
+```
+
+## 2. Timeline of sampling years
+
+```{r}
+# Datasets sampling periods as vectors
+task1 <- c('BBMO', '2004-01-01', '2013-01-01')
+task2 <- c('SOLA', '2007-01-01', '2015-01-01')
+task3 <- c('ASTAN', '2009-01-01', '2016-01-01')
+task4 <- c('BioMarKs', '2009-01-01', '2010-01-01')
+task5 <- c('Malaspina', '2010-01-01', '2011-01-01')
+task6 <- c('MOOSE', '2017-01-01', '2018-01-01')
+
+# Create dataframe
+df <- as.data.frame(rbind(task1, task2, task3, task4, task5, task6))
+names(df) <- c('task', 'start', 'end')
+df$task <- factor(df$task, levels = df$task)
+df$start <- as.Date(df$start)
+df$end <- as.Date(df$end)
+df_melted <- melt(df, measure.vars = c('start', 'end'))
+
+# Gantt plot
+start_date <- as.Date('2004-01-01')
+
+df_melted$task <- factor(df_melted$task,levels = c("MOOSE", "Malaspina", "SOLA", "BBMO","ASTAN", "BioMarKs"))
+
+p1 <- ggplot(df_melted, aes(value, task, color=task)) + 
+  geom_line(size = 5) +
+  scale_color_manual(values=c("darkorange3", "dodgerblue4", "darkolivegreen4", "orange1", "dimgrey", "red4")) +
+  labs(x = '', y = '') +
+  theme_bw(base_size = 15) +
+  theme(aspect.ratio = 0.25,
+        legend.position = "none",
+        panel.grid.major.x = element_line(colour="grey", linetype = "dashed"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 45, face ="bold", margin = margin(t=8)),
+        axis.text.y = element_text(face ="bold")) +
+  scale_x_date(date_labels = "%Y", limits = c(start_date, NA), date_breaks = '1 year')
+
+plot(p1)
+```
+
+## 3. Principal Compenent Analysis
+
+```{r}
+# Read data frame
+Metadata_all=read.csv("/shared/projects/formaldark/R_igraph/Final_files/Metadata_all_1211.csv",h=T, sep=",",row.names=1)
+summary(Metadata_all)
+view(Metadata_all[1,])
+
+# Keep only quantitative variables and replace NA by mean
+num_meta_all <- Metadata_all[,10:21]
+num_meta_all <- replace_na(num_meta_all,as.list(colMeans(num_meta_all,na.rm=T)))
+
+# Calculating PCA
+ACP <- dudi.pca(num_meta_all, center=TRUE, scale=TRUE, scannf=FALSE)
+
+# Computation of PCA axis values
+eigenval <- ACP$eig
+eig <- data.frame(eigenval)
+
+# Scree plot
+eig.prob <- (eig$eigenval/sum(eig$eigenval))*100
+fviz_eig(ACP, addlabels=TRUE) + geom_line(aes(y=mean(eig.prob)))
+
+# Significant axis of PCA, Kaiser-Guttman criterium, Legendre & Legendre 2008
+ACP$eig>mean(ACP$eig)
+
+# PCA biplot 
+Metadata_all$Dataset <- factor(Metadata_all$Dataset,levels = c("BioMarKs", "ASTAN", "BBMO", "SOLA", "Malaspina","MOOSE"))
+
+p2 <- fviz_pca_biplot(ACP, 
+                      col.ind = Metadata_all$Dataset, 
+                      palette = "uchicago", 
+                      addEllipses = F, label = "var",
+                      col.var = "black", repel = TRUE,
+                      legend.title = "Dataset")
+plot(p2)
+
+## Group by marine region
+p3 <- fviz_pca_ind(ACP,
+                   geom.ind = "point", 
+                   col.ind = Metadata_all$Sea, 
+                   palette = "jama",
+                   addEllipses = F, 
+                   legend.title = "Marine region")
+
+plot(p3)
+```
