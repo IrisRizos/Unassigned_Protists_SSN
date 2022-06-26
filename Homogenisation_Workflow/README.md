@@ -4,7 +4,7 @@ Step 1: filtration of multicellular taxa and removal of sequences with clusterin
 
 Awk commands:
 
-,,,
+'''
 hhh
-,,,
+'''
 
