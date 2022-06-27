@@ -1,5 +1,11 @@
 # Commands, scripts and comments relative to Homogenisation workflow
 
+## Files:
+* ASV_18SV4_6MetaB.csv: global homogenised dataset resulting from the workflow
+* Normalisation_Alpha_div_Abund.Rmd: R script including normalisation of datasets and quantification of unassigned sequences across datasets and taxonomy
+
+Below are listed the steps followed to unite the 6 metabarcoding datasets. 
+
 ## Step 1:
 * Removal of sequences with clustering similarity id < 80%:
 ```
