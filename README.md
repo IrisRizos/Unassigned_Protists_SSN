@@ -20,7 +20,10 @@ By:
 
 ## Data
 
+* Global V4-18S metabarcode dataset (343,165 OTUs): /Homogenisation workflow/ASV_all_18SV4_6MetaB.zip
 
+
+* Syndiniales network (4,317 CCs): /SSN/Split_Igraph_Synd_id100_cov80.z01-3
 
 
 
