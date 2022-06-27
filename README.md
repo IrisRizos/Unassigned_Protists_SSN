@@ -19,7 +19,7 @@ By:
 
 
 ## Data
-
+Below are listed the data needed to re-run analysis included in this study. The README of each folder will guide you to the adequate scripts.
 * Global V4-18S metabarcode dataset (343,165 OTUs): /Homogenisation workflow/ASV_all_18SV4_6MetaB.zip
 
 
