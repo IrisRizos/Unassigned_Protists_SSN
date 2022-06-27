@@ -1,0 +1,263 @@
+---
+title: "Creation of SSN and selection of parasite clusters"
+author: "Iris Rizos"
+date: "14/04/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# setwd("/shared/projects/formaldark/R_igraph/Final_files/")
+
+# Import packages
+library(igraph)
+library(rlist)
+library(stringr)
+library(plyr)
+library(ggplot2)
+library(RColorBrewer)
+```
+
+## 1. Sequence Similarity Network
+
+# 1.1 Creation and filtering
+
+The network will be composed of nodes connected by edges. The nodes are the metabarcodes and the edges the sequence similarity between them. 
+
+The results of all-against-all blast are the input for the edges of the network. Blast results were filtered according to the following parameters:
+Similarity threshold = 100%
+Coverage >= 80%
+
+The input file for the nodes is a data-frame containing taxonomic information and metadata of the sequences. Nodes are also called vertices.
+
+```{r eval=FALSE, include=FALSE}
+# Read edges and nodes input files
+edges=read.csv("SSN_all_filtered_100_cov80.tab", h=F, sep="\t")
+nodes=read.csv("All_seq_SSN_tax_status_meta_2.csv", h=T, sep=";")
+
+# Network creation by igraph 
+# The graph doesn't have a direction as the edges represent similarity is thus a bidirectional attribute for a pair of sequences  
+g <- graph_from_data_frame(d=edges, vertices=nodes, directed = F)
+
+# Check if there are node pairs, a simple graph has only unique pairs
+any_multiple(g)
+is_simple(g)
+
+# Summary of edges and nodes attributes
+summary(g)
+
+# Calculate the network size
+gsize(g) # nb edges
+gorder(g) # nb nodes
+
+# Remove isolated nodes (sequences not linked to any other sequence at 100% similarity)
+isolated = which(degree(g)==0)
+length(isolated)
+(length(isolated)/count_components(g))*100 # % of isolated nodes
+g2 = delete.vertices(g, isolated)
+
+# Save network
+# saveRDS(g2, file = "Igraph_100_cov80_noIso.RDS") 
+```
+
+# 2.1 Decomposition in clusters
+
+The network is composed of a list of clusters that are generated according to the similarity threshold (here 100%).
+These elements are called Connected Components (CCs) and contain sequences that meet the similarity criterium.
+
+When the network is decomposed in clusters, a minimum number of sequences (minimum cluster size) is set. 
+Here we apply a cluster threshold size of 6 sequences as our analyses are based on 6 marine regions (defined by a PCA).
+
+```{r}
+# Read network
+# g2 <- readRDS("Igraph_100_cov80_noIso.RDS")
+
+# Decomposition in CCs
+dg <- decompose(g2, mode = c("strong"), max.comps = NA,
+                min.vertices = 6)
+
+# Histogram of decomposed CC sizes
+comp_sizes = unlist(lapply(dg, function(x) vcount(x)))
+comp_sizes <- data.frame(comp_sizes)
+write.csv(comp_sizes,'CC_sizes_100_cov80.csv')
+sum(comp_sizes)
+summary(comp_sizes)
+hist(comp_sizes[,1])
+```
+
+## 2. Selection of Syndiniales clusters
+
+The majority of unassigned sequences in our global dataset belongs to marine dinoflagellate parasites (Syndiniales or MALVs).
+
+```{r}
+# Read 100% similarity network
+# dg <- readRDS("Igraph_100_cov80_noIso.RDS")
+
+# Select CCs of Class Syndiniales 
+dg_synd <- list()
+for (i in dg) {
+  t <- table(V(i)$Class)
+  t <- data.frame(table(V(i)$Class))
+  if (t[1,1] == "Syndiniales" && nrow(t)==1) {
+    dg_synd <- list.append(dg_synd,i)
+  }
+}
+
+# Calculate the % of network represented by Syndiniales
+(length(dg_synd)/length(dg))*100 # 34.21%
+
+# Save Syndiniales network
+# saveRDS(dg_synd, file = "Igraph_Synd_id100_cov80.RDS") 
+```
+
+Among these clusters we can explore the taxonomy. 
+
+# 2.1 How many clusters belong to each Order of Syndiniales ? 
+
+```{r}
+# Read Syndiniales network
+dg_synd <- readRDS("Igraph_Synd_id100_cov80.RDS")
+
+# Get table with orders of unknown Syndiniales 
+######### CC taxonomic info table #########
+# Function for order taxonomic status and division group of each CC
+#######################################################
+###*************************************************###
+## For all CC of a graph ##
+taxo.info <- function(CC) {
+  Tax <- c()
+  # Get taxo info
+  ord <- V(CC)$Order
+  taxonomy <- table(ord)
+  taxonomy <- data.frame(taxonomy)
+  
+  # Create data frame and split genus status and division into 2 columns
+  taxonomy <- subset(taxonomy, select = -c(Freq))
+  names(taxonomy)[1] <- "Order"
+  taxonomy <- taxonomy[1,]
+  Tax <- c(Tax,paste(taxonomy))
+  
+  return(Tax) 
+}
+###*************************************************###
+#######################################################
+d = lapply(dg_synd,taxo.info)
+
+# Assign id to each CC of graph 
+newlist2 <- mapply(cbind, d, "CC_id"=1:length(dg_synd), SIMPLIFY=F)
+
+# Create data frame
+df_taxo <- ldply(newlist2, data.frame)
+
+# Set type of variables
+df_taxo$CC_id <- as.character(paste(df_taxo$CC_id))
+names(df_taxo)[names(df_taxo)=="V1"] <- "Order"
+
+# We can now calculate the number of CCs among each group
+# Distribution of Dino groups
+df_I <- df_taxo[df_taxo$Order=="Dino-Group-I",]
+CC_I <- nrow(df_I)
+df_II <- df_taxo[df_taxo$Order=="Dino-Group-II",]
+CC_II <- nrow(df_II)
+df_III <- df_taxo[df_taxo$Order=="Dino-Group-III",]
+CC_III <- nrow(df_III)
+df_IV <- df_taxo[df_taxo$Order=="Dino-Group-IV",]
+CC_IV <- nrow(df_IV)
+df_V <- df_taxo[df_taxo$Order=="Dino-Group-V",]
+CC_V <- nrow(df_V)
+df_uk <- df_taxo[df_taxo$Order=="Unknown",]
+CC_uk <- nrow(df_uk)
+
+# Create data-frame
+tax_status <- c("Dino-Group-I","Dino-Group-II","Dino-Group-III","Dino-Group-IV","Dino-Group-V","Unknown")
+CC_nb <- c(CC_I,CC_II,CC_III,CC_IV,CC_V,CC_uk)
+df <- data.frame(tax_status, CC_nb)
+
+# Plot
+p1 <- ggplot(df, aes(y=CC_nb, x=tax_status,fill=tax_status)) + 
+  geom_bar(stat="identity", colour="black") +
+  scale_fill_brewer(palette="Dark2") +
+  theme_classic() +
+  theme(axis.ticks.x=element_blank(), axis.title.x=element_blank(), axis.text.x=element_text(face="bold")) +
+  ylab("Number of CCs") +
+  labs(fill='Syndiniales Order') +
+  theme(legend.title = element_text(face="bold")) +
+  geom_text(aes(label=CC_nb), position=position_dodge(width=0.9), vjust=-0.25) +
+  ggtitle("Syndiniales clusters: assigned and unassigned") +
+  theme(plot.title = element_text(hjust=0.5, face="bold"))
+
+plot(p1)
+```
+
+# 2.2 And how many contain unassigned sequences ?
+We select only Syndiniales clusters that do not have a taxonomic annotation at genus level.
+
+Figure S6
+
+```{r}
+# Select CCs unassigned at genus level
+dg_synd_uk <- list()
+for (i in dg_synd) {
+  t <- table(V(i)$Genus_status)
+  t <- data.frame(table(V(i)$Genus_status))
+  if (t[1,1] == "Unknown" && nrow(t)==1) {
+    dg_synd_uk <- list.append(dg_synd_uk,i)
+  }
+}
+
+# Calculate the % of Syndiniales network represented by unassigned Syndiniales
+(length(dg_synd_uk)/length(dg_synd_uk))*100
+
+d = lapply(dg_synd_uk,taxo.info)
+
+# Assign id to each CC of graph 
+newlist2 <- mapply(cbind, d, "CC_id"=1:length(dg_synd_uk), SIMPLIFY=F)
+
+# Create data frame
+df_taxo <- ldply(newlist2, data.frame)
+
+# Set type of variables
+df_taxo$CC_id <- as.character(paste(df_taxo$CC_id))
+names(df_taxo)[names(df_taxo)=="V1"] <- "Order"
+
+# We can now calculate the number of CCs among each group
+# Distribution of Dino groups
+df_I <- df_taxo[df_taxo$Order=="Dino-Group-I",]
+CC_I <- nrow(df_I)
+df_II <- df_taxo[df_taxo$Order=="Dino-Group-II",]
+CC_II <- nrow(df_II)
+df_III <- df_taxo[df_taxo$Order=="Dino-Group-III",]
+CC_III <- nrow(df_III)
+df_IV <- df_taxo[df_taxo$Order=="Dino-Group-IV",]
+CC_IV <- nrow(df_IV)
+df_V <- df_taxo[df_taxo$Order=="Dino-Group-V",]
+CC_V <- nrow(df_V)
+df_uk <- df_taxo[df_taxo$Order=="Unknown",]
+CC_uk <- nrow(df_uk)
+
+# Create data-frame
+tax_status <- c("Dino-Group-I","Dino-Group-II","Dino-Group-III","Dino-Group-IV","Dino-Group-V","Unknown")
+CC_nb <- c(CC_I,CC_II,CC_III,CC_IV,CC_V,CC_uk)
+df <- data.frame(tax_status, CC_nb)
+
+# Plot
+p2 <- ggplot(df, aes(y=CC_nb, x=tax_status,fill=tax_status)) + 
+  geom_bar(stat="identity", colour="black") +
+  scale_fill_brewer(palette="Dark2") +
+  theme_classic() +
+  theme(axis.ticks.x=element_blank(), axis.title.x=element_blank(), axis.text.x=element_text(face="bold")) +
+  ylab("Number of CCs") +
+  labs(fill='Syndiniales Order') +
+  theme(legend.title = element_text(face="bold")) +
+  geom_text(aes(label=CC_nb), position=position_dodge(width=0.9), vjust=-0.25) +
+  ggtitle("Syndiniales clusters: unassigned") +
+  theme(plot.title = element_text(hjust=0.5, face="bold"))
+
+plot(p2)
+```
+
