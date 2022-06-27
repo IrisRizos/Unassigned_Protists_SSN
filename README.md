@@ -36,7 +36,7 @@ code
 
 ## What about your protist group of interest ?
 
-This protocol can be freely re-used to explore the spatiotemporal patterns of any protist group in the network ! The steps are the following:
+This protocol can be freely re-used to explore the spatiotemporal patterns of any protist group ! The steps are the following:
 * Download the network including all protist groups: 
 
 
