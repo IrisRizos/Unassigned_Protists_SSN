@@ -1,9 +1,5 @@
 # Commands, scripts and comments relative to Homogenisation workflow
 
-## Files:
-* ASV_18SV4_6MetaB.csv: global homogenised dataset resulting from the workflow
-* Normalisation_Alpha_div_Abund.Rmd: R script including normalisation of datasets and quantification of unassigned sequences across datasets and taxonomy
-
 Below are listed the steps followed to unite the 6 metabarcoding datasets. 
 
 ## Step 1:
@@ -87,6 +83,8 @@ awk -F ";" '/^ASV_/ && $2=="Unknown" {print">"$1"\n"$11}' ASV_filt_PR2_f200.csv 
 awk '/^>/ {printf("%s%s\t",(N>0?"\n":""),$0);N++;next;} {printf("%s",$0);} END {printf("\n");}' ASV_NA_Kingdom.fa > ASV_NA_Kingdom_lin.fa
 ```
 
-The assignment and occurence (dataset and depth) of the sequences was studied (cf. Normalisation_Alpha_div_Abund.Rmd).
+The assignment and occurence (dataset and depth) of these sequences was studied (cf. Normalisation_Alpha_div_Abund.Rmd).
+
+#### The homogenised global dataset resulting from the workflow (ASV_18SV4_6MetaB.csv) was explored in the script Normalisation_Alpha_div_Abund.Rmd which includes the normalisation of datasets and quantification of unassigned sequences across datasets and taxonomy.
 
 #### All scripts and analysis were performed on ABiMS cluster of Roscoff Marine station (http://abims.sb-roscoff.fr).
