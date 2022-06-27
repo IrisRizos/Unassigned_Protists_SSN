@@ -34,10 +34,17 @@ code
 ## What about your protist group of interest ?
 
 This protocol can be freely re-used to explore the spatiotemporal patterns of any protist group in the network ! The steps are the following:
-* Indicate the taxonomic level and id of the group (e.g. Class==Syndiniales) in the script: this will subtract from the netwrok only the clusters (Connected Components) composed of your chosen group along with their metadata.
-* Run scripts XX...
+* Download the network including all protist groups: 
+Folder SSN, files Split_Igraph_all_.z0 (see README of SSN folder)
+
+* Select your target group: 
+Indicate the taxonomic level and id of the group (e.g. Class==Syndiniales) in script SSN_Synd.Rmd (lines 101-109): this will subtract from the network only the clusters (Connected Components) composed of sequences of your chosen group along with their metadata.
+N.b. if you are also curious about assigned / unassigned sequences at low taxonomic levels (e.g. genus) within your target group, you can further refine your cluster selection at lines 202-211.
+
+* Spatiotemporal exploration:
+Run scripts XX...
 
 
-It is also possible to implement your own sequences and see how they clusterise among the SSN. Just note that a computation time of 1 week is required (job run in parallel on X nodes, CPU, RAM...) to run the all-against-all alignment with the updated sequence dataset + 1-2h for network creation by igraph. After that, you can catch up the protocol from the clusterisation step (Script: XX).
+It is also possible to implement your own sequences and see how they clusterise among the SSN. Just note that a computation time of 1 week is required (job run in parallel on X nodes, CPU, RAM...) to run the all-against-all alignment with the updated sequence dataset + 1-2h for network creation by Igraph with R. After that, you can catch up the protocol from the clusterisation step (Script: XX).
 
 
