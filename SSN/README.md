@@ -19,3 +19,7 @@ remove multiple hits:
 srun filter.py
 ```
 
+remove seq redundnacies:
+```
+sbatch launch_short_working_script.sh remove_seq_redundancies.py -c <file name>
+```
