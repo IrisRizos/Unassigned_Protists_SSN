@@ -7,3 +7,15 @@ This is a compressed R object (RDS file). To open it with R, first download the 
 ```
 zip -F Split_Igraph_Synd_id100_cov80.zip --out Igraph_Synd_id100_cov80.RDS.zip 
 ```
+
+
+calculate coverage:
+```
+srun python filter_blast.py -b <blast-file> -f <fasta-file>
+```
+
+remove multiple hits:
+```
+srun filter.py
+```
+
