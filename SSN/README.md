@@ -2,7 +2,7 @@
 
 A sequence Similarity Network is composed of sequences (network nodes) connected by their similarity % (network edges). It's input is the pairwise alignments of all-against-all blast of the sequences among our global dataset. Below are listed the steps of SSN creation and filtration.
 
-* Database creation:
+## * Database creation:
 ```
 makeblastdb -in Sequences.fasta -dbtype nucl -out SSN_db
 ```
@@ -66,13 +66,10 @@ Filter:
 awk -F"\t" '/^ASV/ {if($13>=80.00 && $14>=80.00) print$0}' SSN_filt3.tab > SSN_filt4.tab
 ```
 
-* Network creation by Igraph in R:
+* Network creation by Igraph in R: SSN_Synd.Rmd
 Nodes are clustered in Connected Components (CCs) according to similarity threshold. Isolated nodes are removed.
-
-
-
-Selection of Syndiniales order
-
+CCs are filtered by taxonomy to select only clusters containing sequences assigmed to the Syndiniales order.
+These clusters were further splitted into sequences with and without (i.e. unassigned) an affiliation at the genus level.
 
 * Network creation output for downstream analysis: Syndiniales CCs: Split_.z0
 
