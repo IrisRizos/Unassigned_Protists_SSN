@@ -65,7 +65,7 @@ g2 = delete.vertices(g, isolated)
 # saveRDS(g2, file = "Igraph_100_cov80_noIso.RDS") 
 ```
 
-# 2.1 Decomposition in clusters
+# 1.2 Decomposition in clusters
 
 The network is composed of a list of clusters that are generated according to the similarity threshold (here 100%).
 These elements are called Connected Components (CCs) and contain sequences that meet the similarity criterium.
