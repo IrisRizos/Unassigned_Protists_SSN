@@ -49,16 +49,16 @@ Removal of self-hits (A<->A):
 awk -F"\t" '/^ASV/ {if($1!=$2) print$0}' SSN_filt1.tab > SSN_filt2.tab
 ```
 
-Remove of multiple hits (A<->B, B<->A):
+Remove of redundant hits (A<->B, B<->A):
 ```
-srun filter.py
+srun Red_blast_filter.py
 ```
 
 Remove alignments with a coverage <80%:
 
 Calculate coverage:
 ```
-srun python filter_blast.py -b <blast-file> -f <fasta-file>
+srun python Blast_coverage.py -b <blast-file> -f <fasta-file>
 ```
 
 Filter:
@@ -67,6 +67,7 @@ awk -F"\t" '/^ASV/ {if($13>=80.00 && $14>=80.00) print$0}' SSN_filt3.tab > SSN_f
 ```
 
 * ## Network creation by Igraph in R: SSN_Synd.Rmd
+https://igraph.org/r/
 Nodes are clustered in Connected Components (CCs) according to similarity threshold. Isolated nodes are removed.
 CCs are filtered by taxonomy to select only clusters containing sequences assigmed to the Syndiniales order.
 These clusters were further splitted into sequences with and without (i.e. unassigned) an affiliation at the genus level.
