@@ -34,6 +34,7 @@ atomicblastplus.py -p blastn -i Sequences.fasta -o <output folder> -d SSN_db -n 
 ```
 
 -n: number of sequences per sub-file, intermediary files are concatenated by default at the end of the run
+
 -c: number of running arrays
 
 
