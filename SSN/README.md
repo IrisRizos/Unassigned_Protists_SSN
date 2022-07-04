@@ -2,7 +2,7 @@
 
 A sequence Similarity Network is composed of sequences (network nodes) connected by their similarity % (network edges). It's input is the pairwise alignments of all-against-all blast of the sequences among our global dataset. Below are listed the steps of SSN creation and filtration.
 
-## * Database creation:
+* ## Database creation:
 ```
 makeblastdb -in Sequences.fasta -dbtype nucl -out SSN_db
 ```
