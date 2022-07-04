@@ -50,7 +50,7 @@ N.b. if you are also curious about assigned / unassigned sequences at low taxono
 
 * Spatiotemporal exploration:
 
-Run script with your target group clusters as input.
+Run script /Spatiotemporal analysis/Spatial_expl.Rmd with your target group clusters as input.
 
 
 It is also possible to implement your own sequences and see how they clusterise among the SSN. Just note that a computation time of 1 week is required to run the all-against-all alignment with the updated sequence dataset + 1-2h for network creation by Igraph with R. After that, you can catch up the protocol from the network clusterisation step (Script: SSN_Synd.Rmd, line).
