@@ -20,10 +20,12 @@ By:
 
 ## Data
 Below are listed the data needed to re-run analysis included in this study. The README of each folder will guide you to the adequate scripts.
-* Global homogenised V4-18S metabarcode dataset (343,165 OTUs): /Homogenisation workflow/ASV_all_18SV4_6MetaB.zip
+* Global homogenised V4-18S metabarcode dataset (343,165 OTUs): 
+/Homogenisation workflow/ASV_all_18SV4_6MetaB.zip
 
 
-* Syndiniales network (4,317 CCs): /SSN/Split_Igraph_Synd_id100_cov80.z01-3
+* Syndiniales network (4,317 CCs): 
+/SSN/Split_Igraph_Synd_id100_cov80.z01-3
 
 
 
@@ -50,7 +52,7 @@ N.b. if you are also curious about assigned / unassigned sequences at low taxono
 
 * Spatiotemporal exploration:
 
-Run script /Spatiotemporal analysis/Spatial_expl.Rmd with your target group clusters as input.
+Run script /Spatiotemporal Analysis/Spatial_expl.Rmd with your target group clusters as input.
 
 
 It is also possible to implement your own sequences and see how they clusterise among the SSN. Just note that a computation time of 1 week is required to run the all-against-all alignment with the updated sequence dataset + 1-2h for network creation by Igraph with R. After that, you can catch up the protocol from the network clusterisation step (Script: SSN_Synd.Rmd, line).
