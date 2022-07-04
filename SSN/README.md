@@ -67,7 +67,8 @@ awk -F"\t" '/^ASV/ {if($13>=80.00 && $14>=80.00) print$0}' SSN_filt3.tab > SSN_f
 ```
 
 * ## Network creation by Igraph in R: SSN_Synd.Rmd
-https://igraph.org/r/
+Documentation: https://igraph.org/r/
+
 Nodes are clustered in Connected Components (CCs) according to similarity threshold. Isolated nodes are removed.
 CCs are filtered by taxonomy to select only clusters containing sequences assigmed to the Syndiniales order.
 These clusters were further splitted into sequences with and without (i.e. unassigned) an affiliation at the genus level.
