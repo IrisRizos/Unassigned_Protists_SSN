@@ -25,9 +25,9 @@ NR >1 { split($0,values,",");
 }
 ```
 
-* All-against-all blast:
+* ## All-against-all blast:
 
-The blast was run by Atomic Blast+, an implementation of NCBI blast+ algorithm that is optimised for handling big files by splitting and parallelising jobs. The run took 1 week.
+The blast was run by Atomic Blast+, an implementation of NCBI blast+ algorithm that is optimised for handling big files by splitting and parallelising jobs. The blast was run on the ABiMs cluster of Roscoff Marine Station (http://abims.sb-roscoff.fr/resources/tools/howto) and took 1 week.
 
 ```
 atomicblastplus.py -p blastn -i Sequences.fasta -o <output folder> -d SSN_db -n 1000 -m @gmail.com -e 1e-4 -c 100 --verbose --send_mails
@@ -37,7 +37,7 @@ atomicblastplus.py -p blastn -i Sequences.fasta -o <output folder> -d SSN_db -n 
 -c: number of running arrays
 
 
-* Filtration of pairwise alignments:
+* ## Filtration of pairwise alignments:
 
 Similarity threshold:
 ```
@@ -66,12 +66,12 @@ Filter:
 awk -F"\t" '/^ASV/ {if($13>=80.00 && $14>=80.00) print$0}' SSN_filt3.tab > SSN_filt4.tab
 ```
 
-* Network creation by Igraph in R: SSN_Synd.Rmd
+* ## Network creation by Igraph in R: SSN_Synd.Rmd
 Nodes are clustered in Connected Components (CCs) according to similarity threshold. Isolated nodes are removed.
 CCs are filtered by taxonomy to select only clusters containing sequences assigmed to the Syndiniales order.
 These clusters were further splitted into sequences with and without (i.e. unassigned) an affiliation at the genus level.
 
-* Network creation output for downstream analysis: Syndiniales CCs: Split_.z0
+* ## Network creation output for downstream analysis: Syndiniales CCs: Split_.z0
 
 This is a compressed R object (RDS file). To open it with R, first download the splitted compressed files and merge files in a single zip before unzipping:
 
