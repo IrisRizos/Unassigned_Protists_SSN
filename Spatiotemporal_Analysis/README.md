@@ -1,12 +1,14 @@
 
 ## Files list:
-*  : 
+* ### Spatial_Expl.Rmd : 
 All the steps required for the analyses are included in the Rmarkdown document.
 
-* Metadata RDA: 
+* ### Metadata_RDA.csv: 
+
 The environmental parameters included in the RDA analysis.
 
-* Anova_RDA.sh and Rscript_Anova_RDA.R:
+* ### Anova_RDA.sh and Rscript_Anova_RDA.R:
+
 The statistical significance of the Redundancy Analysis (RDA) was tested with an ANOVA at two levels, the global RDA and each RDA axis. 
 For the global RDA the ANOVA was run through Rstudio and the commands are included in the Rmd lines 832-842.
 
