@@ -1,6 +1,6 @@
 
 ## Files list:
-* ### Spatial_Expl.Rmd : 
+* ### Spatial_expl.Rmd : 
 All the steps required for the analyses are included in the Rmarkdown document.
 
 * ### Metadata_RDA.csv: 
