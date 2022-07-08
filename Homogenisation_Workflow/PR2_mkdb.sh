@@ -4,6 +4,8 @@
 #SBATCH --cpus-per-task=4 
 #SBATCH -o o.mkdb
 #SBATCH -e e.mkdb
+#SBATCH --mail-user=iris.rizos@sb-roscoff.fr
+#SBATCH --mail-type=BEGIN,FAIL,END
 
 module load blast/
 
