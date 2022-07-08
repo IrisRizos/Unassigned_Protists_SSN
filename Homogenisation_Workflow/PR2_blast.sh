@@ -2,8 +2,8 @@
 #
 #SBATCH --job-name blast
 #SBATCH --cpus-per-task=6 
-#SBATCH -o o.Barc_blast
-#SBATCH -e e.Barc_blast
+#SBATCH -o o.Dataset_blast
+#SBATCH -e e.Dataset_blast
 
 module load blast/2.2.31
 
