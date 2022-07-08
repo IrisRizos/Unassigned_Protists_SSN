@@ -4,6 +4,8 @@
 #SBATCH --cpus-per-task=6 
 #SBATCH -o o.Dataset_blast
 #SBATCH -e e.Dataset_blast
+#SBATCH --mail-user=iris.rizos@sb-roscoff.fr
+#SBATCH --mail-type=BEGIN,FAIL,END
 
 module load blast/2.2.31
 
