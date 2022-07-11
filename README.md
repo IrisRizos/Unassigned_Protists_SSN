@@ -17,6 +17,7 @@ By:
 
 ## Abstract
 
+++
 
 ## Data
 Below are listed the data needed to re-run analysis included in this study. The README of each folder will guide you to the adequate scripts.
@@ -31,6 +32,8 @@ Below are listed the data needed to re-run analysis included in this study. The 
 
 ## Prerequisites
 
+R, igraph
+Computational aspect: parallelisation, up to 50 GB memory, CPU ?
 
 ```
 code
