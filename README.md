@@ -7,7 +7,7 @@ The goal of this study is to:
 * Describe the overall proportion of protist sequences which lack taxinomic assignment in PR2 reference database
 * Identify protist lineages that are the least described across 6 metabarcoding datasets (including open-sea campaigns and coastal time-series)
 * Reveal wide scale geographic distribution patterns of parasitic dinoflagellates (i.e. Syndiniales) that are unassigned at the genus level (i.e. 98% of Syndiniales sequences!)
-* Highlight a list of recurrent (through 10 years data) community-indicator parasite taxa to be prioritized for identification
+* Highlight a list of recurrent (through at least 7 years of data) community-indicator parasite taxa to be prioritized for identification
 
 By:
 * Integrating diverse metabarcoding datasets into a global dataset with an homogenised taxonomy
