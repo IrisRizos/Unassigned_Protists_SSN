@@ -1,18 +1,18 @@
 # Exploring the marine realm of unassigned taxonomic protist diversity: parasites in the spotlight
 
-Exploration of taxinomically unassigned protist barcode sequences across different V4-18S datasets. 
+Exploration of taxinomically unassigned protist genetic barcode sequences across different V4-18S datasets. 
 
 
 The goal of this study is to:
-* Describe the overall proportion of protist sequences which lack taxinomic description from reference databases
-* Identify protist lineages that are the least described across 6 metabarcoding datasets
-* Reveal geographic distribution patterns of parasitic dinoflagellates that are unassigned at the genus level (i.e. 98% of sequences!)
-* Get a list of most abundant and recurrent (through 10 years data) community-indicator parasite taxa to be prioritized for identification
+* Describe the overall proportion of protist sequences which lack taxinomic assignment in PR2 reference database
+* Identify protist lineages that are the least described across 6 metabarcoding datasets (including open-sea campaigns and coastal time-series)
+* Reveal wide scale geographic distribution patterns of parasitic dinoflagellates (i.e. Syndiniales) that are unassigned at the genus level (i.e. 98% of Syndiniales sequences!)
+* Highlight a list of recurrent (through 10 years data) community-indicator parasite taxa to be prioritized for identification
 
 By:
-* Homogenising diverse metabarcoding datasets (time-series and oceanographic campaigns) into a global dataset
-* Clustering the sequences of the global dataset together based on similarity with a Sequence Similarity Network
-* Exploring spatial and temporal distribution patterns of unassigned sequence clusters at a selected taxonomic level and for a selected protist group
+* Integrating diverse metabarcoding datasets into a global dataset with an homogenised taxonomy
+* Clustering the gathered metabarcode sequences together based on sequence similarity with a Sequence Similarity Network which allows to adress integrated ecological ascpects of clusters at low taxonomic resolution independent of their lack of taxonomic assignment
+* Exploring spatial and temporal patterns of unassigned sequence clusters at a selected taxonomic level and for a selected protist group
 
 
 ## Abstract
