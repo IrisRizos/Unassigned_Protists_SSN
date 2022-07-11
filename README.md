@@ -11,7 +11,7 @@ The goal of this study is to:
 
 By:
 * Integrating diverse metabarcoding datasets into a global dataset with an homogenised taxonomy
-* Clustering the gathered metabarcode sequences together based on sequence similarity with a Sequence Similarity Network which allows to adress integrated ecological ascpects of clusters at low taxonomic resolution independent of their lack of taxonomic assignment
+* Clustering the gathered metabarcode sequences together based on sequence similarity with a Sequence Similarity Network, allowing to adress integrated ecological ascpects of clusters at low taxonomic resolution independent of their lack of taxonomic assignment
 * Exploring spatial and temporal patterns of unassigned sequence clusters at a selected taxonomic level and for a selected protist group
 
 
