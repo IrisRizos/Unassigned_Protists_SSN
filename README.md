@@ -29,14 +29,14 @@ Marine protists are major components of the oceanic microbiome that remain large
 * MOOSE (2017, 2018): West Mediterranean, https://www.moose-network.fr
 
 ### Coastal European Sampling Project:
-* BioMarKs - Biodiversity of Marine euKaryotes ( ): https://www.biodiversa.org/122
+* BioMarKs - Biodiversity of Marine euKaryotes (2009-2010): https://www.biodiversa.org/122
 
 ### Time-series:
-* ASTAN (): https://www.sb-roscoff.fr/fr/observation/presentation/perimetre-d-etudes/somlit-astan, Roscoff, France
+* ASTAN (2009-2016): https://www.sb-roscoff.fr/fr/observation/presentation/perimetre-d-etudes/somlit-astan, Roscoff, France
 
-* SOLA ( ): https://www.somlit.fr/banyuls/, Banyuls-sur-Mer, France
+* SOLA (2007-2015): https://www.somlit.fr/banyuls/, Banyuls-sur-Mer, France
 
-* BBMO ( ): http://bbmo.icm.csic.es, Blanes Bay, Spain
+* BBMO (2004-2013): http://bbmo.icm.csic.es, Blanes Bay, Spain
 
 
 ## Data
