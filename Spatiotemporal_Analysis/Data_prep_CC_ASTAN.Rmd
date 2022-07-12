@@ -1,0 +1,203 @@
+---
+title: "Data preparation ASTAN"
+author: "Thomas Finet"
+date: "04/11/2021"
+output: html_document
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tidyverse)
+library(openxlsx)
+library(readxl)
+library(vegan)
+```
+
+
+## Syndiniales data importation
+
+Import abundance matrix of Connected Components (CCs) and metadata in order to extract the information related to the ASTAN Temporal Series.
+
+```{r}
+CC_abund_Synd_ASTAN <- read.csv("CC_abund_Synd.csv",h=T, sep=",")
+Metadata_all <- read.csv("Metadata_all_1211.csv",h=T, sep=",")
+Metadata_ASTAN<-Metadata_all %>% filter(Dataset=='ASTAN')
+#We remove the first column
+Metadata_ASTAN<-Metadata_ASTAN[,-1]
+```
+
+## Creation of data-frame
+
+```{r}
+# We select the samples that the belong to the ASTAN time series
+CC_abund_Synd_ASTAN_clean<-select(CC_abund_Synd_ASTAN, starts_with("RA"))
+# Addition of CC ids and genus status info
+CC_abund_Synd_ASTAN_clean$CC_id<-CC_abund_Synd_ASTAN$CC_id
+CC_abund_Synd_ASTAN_clean$Genus_status<-CC_abund_Synd_ASTAN$Genus_status
+# Set CC ids as row names
+rownames(CC_abund_Synd_ASTAN_clean)<-CC_abund_Synd_ASTAN_clean$CC_id
+# Remove CC id and X columns
+CC_abund_Synd_ASTAN_clean<-subset(CC_abund_Synd_ASTAN_clean, select = -c(CC_id))
+# Transpose table
+CC_abund_Synd_ASTAN_clean<-t(CC_abund_Synd_ASTAN_clean)
+CC_abund_Synd_ASTAN_clean<-as.data.frame(CC_abund_Synd_ASTAN_clean)
+# Save genus status info and remove from abundance table
+Status<-CC_abund_Synd_ASTAN_clean[375,]
+CC_abund_Synd_ASTAN_clean<-CC_abund_Synd_ASTAN_clean[-375,]
+
+# Set rownames as column "Sample"
+CC_abund_Synd_ASTAN_clean<-rownames_to_column(CC_abund_Synd_ASTAN_clean, var="Sample")
+# Set abundance values to numeric type
+CC_abund_Synd_ASTAN_clean[,2:length(CC_abund_Synd_ASTAN_clean)]<-sapply(CC_abund_Synd_ASTAN_clean[,2:length(CC_abund_Synd_ASTAN_clean)],as.numeric)
+```
+
+Check if there are samples with null abundance
+
+```{r}
+# Calculate sum of abundance per sample
+CC_abund_Synd_ASTAN_clean$Sum<-rowSums(CC_abund_Synd_ASTAN_clean[2:length(CC_abund_Synd_ASTAN_clean)])
+# Extract samples with total abundance = 0
+null_samples<-subset(CC_abund_Synd_ASTAN_clean,Sum==0)
+print(null_samples$Sample)
+# Remove Sum column
+CC_abund_Synd_ASTAN_clean<-subset(CC_abund_Synd_ASTAN_clean, select=-c(Sum))
+```
+
+Check if there are Connected Components with null abundances
+
+```{r}
+# Compute sums of CCs abundance
+CC_sum<-colSums(CC_abund_Synd_ASTAN_clean[2:length(CC_abund_Synd_ASTAN_clean)])
+# Set Sample column as rownames, remove Sample column and add of Sum row
+rownames(CC_abund_Synd_ASTAN_clean)<-CC_abund_Synd_ASTAN_clean$Sample
+CC_abund_Synd_ASTAN_clean_2<-subset(CC_abund_Synd_ASTAN_clean, select=-c(Sample))
+CC_abund_Synd_ASTAN_clean_2<-rbind(CC_abund_Synd_ASTAN_clean_2,CC_sum)
+CC_abund_Synd_ASTAN_clean_2<-as.data.frame(CC_abund_Synd_ASTAN_clean_2)
+# Removal of CCs with null abundance and Sum row
+CC_abund_Synd_ASTAN_clean_2<-CC_abund_Synd_ASTAN_clean_2[,(CC_abund_Synd_ASTAN_clean_2[375,]) > 0]
+CC_abund_Synd_ASTAN_clean_3<-CC_abund_Synd_ASTAN_clean_2[1:374,]
+# Get genus taxonomic status for selected CCs
+CC_id <- data.frame(colnames(CC_abund_Synd_ASTAN_clean_3))
+names(CC_id)[1]<-"CC_id"
+Status<-data.frame(t(Status))
+Status$CC_id<-rownames(Status)
+Status2<-merge(CC_id,Status)
+```
+
+Cross-check sample correspondence between abundance table and metadata
+
+```{r}
+# Samples present in metadata but not abundance table
+cor1<-anti_join(Metadata_ASTAN,CC_abund_Synd_ASTAN_clean,by=c("Sample")) # we can use the first abundance table as no sample was removed
+
+# Samples present in abundance table but not metadata
+c2<-anti_join(CC_abund_Synd_ASTAN_clean,Metadata_ASTAN,by=c("Sample"))
+```
+
+## Application of Hellinger distance to abundances
+
+```{r}
+# In order to apply hellinger distance data must be in the format: x=CCs, y=samples (it is the case here)
+CC_abund_Synd_ASTAN_clean_hel<-decostand((CC_abund_Synd_ASTAN_clean_3), method="hellinger")
+```
+
+## Addition of temporal info to abundance tables
+
+```{r}
+# Set rownames as first column
+CC_abund_Synd_ASTAN_clean_hel$Sample<-row.names(CC_abund_Synd_ASTAN_clean_hel)
+# Select temporal data from metadata and merge with abundance table
+Metadata_ASTAN_temp<-subset(Metadata_ASTAN,select=c(Sample,Month,Year))
+CC_ASTAN_Synd_final<-merge(Metadata_ASTAN_temp,CC_abund_Synd_ASTAN_clean_hel, by="Sample")
+# Pivot final table in order to have samples as rows
+CC_ASTAN_Synd_final<-pivot_longer(CC_ASTAN_Synd_final,!Sample & !Month & !Year,names_to ="CC",values_to="abundance")
+names(CC_ASTAN_Synd_final)[4]<-"CC_id"
+# Add genus taxonomic status
+CC_ASTAN_Synd_final<-merge(CC_ASTAN_Synd_final,Status2,by="CC_id")
+
+```
+
+We then add the seasons to our data, see the structure of the data in terms of month and season coverage, and select the years where the sampling effort allows a complete seasonal coverage for our three datasets.
+
+```{r}
+
+#This function receives a month (x vector) and assigns the corresponding seasons (y vector)
+
+season<-function(x){
+  #Creation of a new vector (y) in which we will store the corresponding seasons
+  y <- vector(mode = "list", length = length(x))
+  #Assignation of the corresponding seasons depending on the month
+  for (i in 1:length(x)){
+  if (x[i]=='October'| x[i]=='November'|x[i]=='September'){y[i]='Autumn'}
+  if (x[i]=='January'|x[i]=='February'|x[i]=='December'){y[i]='Winter'}
+  if (x[i]=='April'|x[i]=='May'|x[i]=='March'){y[i]='Spring'}
+  if (x[i]=='July'|x[i]=='August'|x[i]=='June'){y[i]='Summer'}
+  }
+  return(y)
+}
+```
+
+
+
+```{r}
+#Apply the 'season' function to the data
+CC_ASTAN_Synd_final$Season<-as.character(season(CC_ASTAN_Synd_final$Month))
+Metadata_ASTAN$Season<-as.character(season(Metadata_ASTAN$Month))
+
+#The right order of month
+col_order_month<-c("Year","January", "February", "March", "April","May","June","July","August", "September", "October","November", "December")
+#Count the number of sample by Year and by month
+count_month<-Metadata_ASTAN%>% group_by(Month)%>% count(Year)%>% pivot_wider(names_from = "Month", values_from = "n")
+#Apply the right order of the month 
+count_month<-count_month[,col_order_month]
+#See the structure of the data in term of month coverage
+print(count_month)
+
+#The right order of seasons 
+col_order_season<-c("Year","Spring","Summer","Autumn","Winter")
+#Count the number of sample by Year and by seasons 
+count_season<-Metadata_ASTAN%>% group_by(Season)%>% count(Year)%>% pivot_wider(names_from = "Season", values_from = "n")#Apply the right order of the month 
+#Apply the right order of the seasons 
+count_season<-count_season[,col_order_season]
+#See the structure of the data in term of season coverage
+print(count_season)
+#Select the year with a total season-coverage 
+good_year<-count_season%>% na.omit()%>% select(Year)
+
+#Discard the 'uncomplete' years in the data
+Metadata_ASTAN<-Metadata_ASTAN%>% filter (Year%in%good_year$Year)
+CC_ASTAN_Synd_final<-CC_ASTAN_Synd_final %>% filter (Year%in%good_year$Year)
+```
+
+Check if there are Connected Components with null abundance in this new time window
+```{r}
+#Pivot the dataframe
+CC_ASTAN_Synd_check<-pivot_wider(CC_ASTAN_Synd_final, !Month & !Year & !Genus_status & !Season,names_from = "CC_id", values_from = "abundance")
+
+# Compute sums of CCs abundance
+CC_sum<-colSums(CC_ASTAN_Synd_check[2:length(CC_ASTAN_Synd_check)])
+# Set Sample column as rownames, remove Sample column and add of Sum row
+rownames(CC_ASTAN_Synd_check)<-CC_ASTAN_Synd_check$Sample
+CC_ASTAN_Synd_check_2<-subset(CC_ASTAN_Synd_check, select=-c(Sample))
+CC_ASTAN_Synd_check_2<-rbind(CC_ASTAN_Synd_check_2,CC_sum)
+CC_ASTAN_Synd_check_2<-as.data.frame(CC_ASTAN_Synd_check_2)
+# Removal of CCs with null abundance and Sum row
+CC_ASTAN_Synd_check_2<-CC_ASTAN_Synd_check_2[,(CC_ASTAN_Synd_check_2[375,]) > 0]
+CC_ASTAN_Synd_check_3<-CC_ASTAN_Synd_check_2[1:374,]
+#Store the names of the columns
+CC_present<-colnames(CC_ASTAN_Synd_check_3)
+
+#Filter the final dataframe
+CC_ASTAN_Synd_final_good<-CC_ASTAN_Synd_final[which (CC_ASTAN_Synd_final$CC_id %in% CC_present),]
+
+```
+Creation of final abundance and metadata tables for ASTAN
+
+```{r}
+write.csv(CC_ASTAN_Synd_final_good,"CC_abund_Synd_ASTAN_clean.csv")
+write.csv(Metadata_ASTAN,"Metadata_ASTAN.csv")
+```

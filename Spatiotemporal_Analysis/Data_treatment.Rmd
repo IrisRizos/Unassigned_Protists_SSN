@@ -1,0 +1,343 @@
+---
+title: "data treatment CC Syndinials"
+author: "Thomas Finet"
+date: "20/05/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tidyverse)
+library(openxlsx)
+library(readxl)
+library(vegan)
+library(gridExtra)
+library(tidyr)
+#Mandatory to us the function 'rbindlist()'
+library(data.table)
+```
+
+## Syndiniales treated-data importation
+
+Import the hellinger-transformed abundance matrix of Connected Components (CCs) and the metadata.
+
+1/ASTAN
+```{r}
+CC_abund_Synd_ASTAN_clean<- read.csv("CC_abund_Synd_ASTAN_clean.csv")
+#Remove the X column
+CC_abund_Synd_ASTAN_clean<-CC_abund_Synd_ASTAN_clean%>% select(-X)
+Metadata_ASTAN <- read.csv("Metadata_ASTAN.csv")
+#Create a dataframe storing the functional status (i.e. 'Known' or 'Unknwown') of each Connected Components (CCs)
+Status_CC_ASTAN<-CC_abund_Synd_ASTAN_clean%>% select(c(CC_id,Genus_status)) %>% unique()
+
+```
+
+2/BBMO
+
+```{r}
+CC_abund_Synd_BBMO_clean<- read.csv("CC_abund_Synd_BBMO_clean.csv")
+#Remove the X column
+CC_abund_Synd_BBMO_clean<-CC_abund_Synd_BBMO_clean%>% select(-X)
+Metadata_BBMO <- read.csv("Metadata_BBMO.csv")
+#Create a dataframe storing the functional status (i.e. 'Known' or 'Unknwown') of each Connected Components (CCs)
+Status_CC_BBMO<-CC_abund_Synd_BBMO_clean%>% select(c(CC_id,Genus_status)) %>% unique()
+
+```
+
+3/SOLA 
+
+```{r}
+CC_abund_Synd_SOLA_clean<- read.csv("CC_abund_Synd_SOLA_clean.csv")
+#Remove the X column
+CC_abund_Synd_SOLA_clean<-CC_abund_Synd_SOLA_clean%>% select(-X)
+Metadata_SOLA <- read.csv("Metadata_SOLA.csv")
+#Create a dataframe storing the functional status (i.e. 'Known' or 'Unknwown') of each Connected Components (CCs)
+Status_CC_SOLA<-CC_abund_Synd_SOLA_clean%>% select(c(CC_id,Genus_status)) %>% unique()
+
+```
+
+##Definition of the functions 
+
+Create three different functions in order to analyse our data :
+ 
+  -TS_year_season: create a list storing each year's abundances.
+  -temporality: compute a set of measures to assess the ecological diversity of our dataset.
+  -temporality_year: Use the two previous functions to study the differences of presence and abundance between years, using a season-averaged dataset. 
+
+```{r}
+
+#This function divides the dataset according to the years, and then pivots the table. It returns a list of datasets on which the 'temporality' function can be used.
+
+TS_year_season<- function(x){
+  #Order the list of the years present in the dataset 
+  list_year<-sort(as.numeric(unique(x$Year)))
+  #Create an empty list in which we will store our transformed datasets
+  table_year<-list()
+  #Add year by year the pivoted-data to a list :'table_year')
+  for (i in 1:length(list_year)){
+  table_year<-append(list(pivot_wider(subset(x,Year==list_year[i]), !Year,names_from = "CC_id", values_from = "abundance")),table_year, 0)
+  }
+  #Name each file of the 'table_year' list with the year that corresponds
+  table_year<-setNames(as.list(table_year),eval(as.character(list_year)))
+  
+  #return the list of datasets
+  return(table_year)
+}
+
+
+
+#A function that compute different index and measures of interest on an abundance matrix
+
+
+temporality<-function(y){
+  #Convert to dataframe 
+  y<-as.data.frame(y)
+  #Remove the Sample column
+  y<-y[,-1]
+  #Transpose our dataframe 
+  y_t<-t(y)
+  y_t<-as.data.frame(y_t)
+  
+  #Find the number of seasons in which each CC is present 
+  number_season<-specnumber(y_t)
+  #Convert to a dataframe
+  Presence_sample<-as.data.frame(number_season)
+  #Reverse Shannon's index 
+  H<-diversity(y_t)
+  #Reverse Pielou's index
+  J<-H/log(specnumber(y_t))
+  #Add the indexes to the `Presence_sample` dataframe 
+  Presence_sample$H<-as.numeric(H)
+  Presence_sample$J<-as.numeric(J)
+  #Convert to numeric
+  y[,(1:length(y))] <- sapply(y[,(1:length(y))],as.numeric)
+  #Sum of the abundance 
+  ab_sum<-colSums(y[,1:length(y)])
+  #Add the sum of the abundance to the `Presence_sample` dataframe 
+  Presence_sample$ab_sum<-ab_sum
+  
+  #Mean of the seasonal abundance 
+  ab_mean<-colMeans(y[,1:length(y)])
+  #Add the mean of the abundance to the `Presence_sample` dataframe 
+  Presence_sample$ab_mean<-ab_mean
+  
+  #Add the status 
+  Presence_sample$Status<-Status_CC$Genus_status
+  #Add the 'CC_id'
+  Presence_sample$CC_id<-Status_CC$CC_id
+  return(Presence_sample)
+}
+
+
+#Applying the 'TS_year' and 'temporality' function to a dataset of interest, and then we compute the number of seasons in wich each CC is present, for each year 
+
+temporality_year<-function(y){
+  y<-CC_abund_Synd_BBMO_clean
+  #Compute the mean abundance per season for each CC
+  y_clean_Season<- y %>% group_by(CC_id, Year,Season)%>% dplyr::summarize(abundance = mean(abundance, na.rm = TRUE))
+  
+  #Apply the 'TS_year' function to our raw data (i.e. we convert them to a list format, whith each element of the list containing the seasonal abundances of the CC for a year)
+  datasets<-TS_year_season(y_clean_Season)
+  results<-list()
+  #We apply the temporality function to each year 
+  for (i in 1:length(datasets)){
+    results<-append(list(temporality(datasets[[i]])),results,0)
+  }
+  
+  #Name each file of the 'results' list with the year that corresponds
+  names(results)<-as.character(names(datasets))
+  
+
+  #Create a function that we will apply to our list of dataframe to select the columns 'number_season' and 'CC'
+  Select<-function (x,col){
+    y<-x%>% select(col,CC_id)
+    return(y)
+  } 
+  #Apply the 'Select' function to select the columns of interest (i.e. number_season and CC) in each of the dataframe
+  results_common<-lapply(results,Select, col='number_season')
+  #Bind all the dataframe of the list (i.e. all the years) and add an Id (i.e. the year)
+  results_common_dataframe<-rbindlist(results_common, idcol=TRUE)
+  #We pivot the table to have, for each year, the number of seasons present
+  results_year<-pivot_wider(results_common_dataframe, names_from = ".id", values_from = "number_season")
+  #Count the years to find identical CC in term of season presence 
+  results_common_count<-results_common_dataframe%>%group_by(CC_id)%>% count(number_season)
+  #Keep the number of seasons that is the most recurrent in the dataset
+  max<-results_common_count%>% group_by(CC_id)%>% filter (n==max(n))
+  #Identify the CC in double/triple (e.g. 3 years of 2 seasons and 3 years of 1 seasons)
+  max_D<-max[duplicated(max$CC_id)| duplicated(max$CC_id, fromLast = TRUE),]
+  #Take the minimum value of the doulbe/triple
+  max_D_proper<-max_D%>% group_by(CC_id)%>%mutate (number_season=min(number_season))%>% unique()
+  #Remove the duplicates from the 'max' file
+  max<-max[-which(max$CC_id %in%max_D_proper$CC_id),]
+  #Add the new value (i.e. mean) of the deleted rows and order by name
+  number_season_max<-rbind(max,max_D_proper)
+  
+  #Find the years corresponding to the number of seasons selected 
+  results_common_dataframe_pivoted<-pivot_wider(results_common_dataframe,names_from = "number_season", values_from = ".id")
+  #Merge `results_common_dataframe_pivoted` which contains information on the years and `number_season_max`which contains information on the number of seasons selected 
+  number_season_max<-merge(number_season_max,results_common_dataframe_pivoted, by='CC_id')
+  
+  
+  #Create a column `Year` in the 'number_season_max' dataframe
+   number_season_max<-number_season_max%>% mutate(Year=0)
+   CC_abund_selected<-colnames(CC_abund_Synd_SOLA_clean)
+  #fill the column `Year` with the years corresponding to the number of seasons selected and fill it for each CC
+  for (i in 1:nrow(number_season_max)){
+    #Select the column corresponding to the number in the 'number_season' column and extract from it the years
+    number_season_max[i,length(number_season_max)]<-list(number_season_max[i,as.character(number_season_max[i,("number_season")])])
+    #Extract the data corresponding to the selected year for each CC in the raw data
+    add_CC<-CC_abund_Synd%>% filter(CC_id==number_season_max[i,"CC_id"])%>% subset (Year %in% as.numeric(number_season_max[i,9][[1]]))
+    #Compute a new dataframe containing only the data of interest 
+    CC_abund_selected<-rbind(CC_abund_selected,add_CC)
+  }
+  #Remove the first row 
+   CC_abund_selected<-CC_abund_selected[-1,]
+   
+  #Compute the monthly-mean on the period selected for our dataset 
+   mean_abundance_month<-CC_abund_selected%>% group_by(CC_id,Month,Year)%>% summarize(mean_abundance_month= mean(as.numeric(abundance)))
+  #Compute the yearly-mean of the monthly-mean abundances
+   mean_abundance_year<-mean_abundance_month%>% group_by(CC_id,Year)%>% summarize(mean_abundance_year= mean(as.numeric(mean_abundance_month)))
+  #Compute the mean of the yearly-mean abundances 
+   mean_abundance<-mean_abundance_year%>% group_by(CC_id)%>% summarize(mean_abundance= mean(as.numeric(mean_abundance_year)))
+   
+   #Merge both
+   number_season_max<-merge(number_season_max,mean_abundance, by='CC_id')
+   
+   #Remove the unnecessary columns 
+   number_season_max<-number_season_max%>% select(-c("0","1","2","3","4","Year"))
+   #Merge with the number of season presence for each year
+   number_season_max<-merge(number_season_max,results_year,by='CC_id')
+   
+   
+   #Compute the monthly_mean for each years of our dataset
+   for (i in 1:length(results)){
+    #Find the year on which we work
+    year_datasets<-as.numeric(names(results[1]))
+    #Isolate the year and compute the yearly mean abundance based on the monthly mean for each CC
+    mean_abundance_year<-CC_abund_Synd%>%subset(Year==year_datasets)%>% group_by(CC_id,Month)%>% summarize(mean_abundance_month= mean(as.numeric(abundance)))%>% group_by(CC_id)%>% summarize(mean_abundance_year= mean(as.numeric(mean_abundance_month)))
+    
+    #Add a new column in the list of dataframe 'results' containing the monthly mean called :'mean_abundance_month'
+    results[[i]]<-merge(results[[i]],mean_abundance_year, by='CC_id')
+   }
+  
+  #Compute the mean equitability index of our dataset
+  
+  #Apply the 'Select' function to select the columns of interest (i.e. H, J, abundance and CC) in each of the dataframes
+  H_mean<- lapply(results,Select, col='H')
+  J_mean<- lapply(results,Select, col='J')
+  
+  abundance_mean<-lapply(results,Select, col='mean_abundance_year')
+  
+  #Bind all the dataframes 
+  H_mean<- rbindlist(H_mean)
+  J_mean<- rbindlist(J_mean)
+  abundance_mean<-rbindlist(abundance_mean)
+  
+  #Compute the mean for each column of interest 
+  H_mean<-H_mean%>% group_by(CC_id)%>% summarize(H = mean(H, na.rm = TRUE))
+  J_mean<-J_mean%>% group_by(CC_id)%>% summarize(J = mean(J, na.rm = TRUE))
+  mean_abundance_all<-abundance_mean%>% group_by(CC_id)%>% summarize(abundance_mean = mean(mean_abundance_year, na.rm = TRUE))
+  #rename the abundance column : mean_abundance_all
+  colnames(mean_abundance_all)[2]<- "mean_abundance_all"
+  
+  #Merge the max and H_mean
+  All<-merge(H_mean,number_season_max, by='CC_id')
+  All<-merge(J_mean,All, by='CC_id')
+  All$Status<-Status_CC$Genus_status
+  All<-merge(mean_abundance_all,All, by='CC_id')
+  #Add the 'All' dataset to the results
+  results_with_All<-append(list(All),results, 0)
+  #Name the 'All' dataset
+  names(results_with_All)[[length(results_with_All)]]<-"All"
+  
+  #abundances per year 
+  
+  
+  
+   return(results_with_All)
+}
+
+```
+
+
+
+
+We use the functions described previously to transform our three datasets 
+
+```{r bubbleplot ASTAN}
+#Define the 'Status_CC' and the 'CC_abund_Synd' dataframes to the data set that we will use
+Status_CC<-Status_CC_ASTAN
+CC_abund_Synd<-CC_abund_Synd_ASTAN_clean
+#Apply the 'temporality_year' function to the ASTAN dataset
+CC_Synd_ASTAN_Bubbleplot<-temporality_year(CC_abund_Synd_ASTAN_clean)
+
+#Extract the 'All' list and convert it to a dataframe 
+CC_Synd_ASTAN_All<-as.data.frame(CC_Synd_ASTAN_Bubbleplot['All'])
+
+#Remove the string 'All.' part before each columns name
+colnames(CC_Synd_ASTAN_All)<-str_sub(colnames(CC_Synd_ASTAN_All),5)
+
+#Convert the lists in characters
+
+CC_Synd_ASTAN_All[,5:11]<-sapply(CC_Synd_ASTAN_All[,5:11],as.character)
+
+#We export the file
+write.csv(CC_Synd_ASTAN_All,"CC_Synd_ASTAN_All.csv")
+```
+
+```{r bubbleplot BBMO}
+#Define the 'Status_CC' and the 'CC_abund_Synd' dataframes to the data set that we will use
+Status_CC<-Status_CC_BBMO
+CC_abund_Synd<-CC_abund_Synd_BBMO_clean
+#Apply the 'temporality_year' function to the BBMO dataset
+CC_Synd_BBMO_Bubbleplot<-temporality_year(CC_abund_Synd_BBMO_clean)
+#We export the file 'CC_Synd_BBMO_Bubbleplot'
+write.csv(CC_Synd_BBMO_Bubbleplot,"CC_Synd_BBMO_Bubbleplot.csv")
+
+
+#Extract the 'All' list and convert it to a dataframe 
+CC_Synd_BBMO_All<-as.data.frame(CC_Synd_BBMO_Bubbleplot['All'])
+
+#Remove the string 'All.' part before each columns name
+colnames(CC_Synd_BBMO_All)<-str_sub(colnames(CC_Synd_BBMO_All),5)
+
+#Convert the lists in characters
+
+CC_Synd_BBMO_All[,5:11]<-sapply(CC_Synd_BBMO_All[,5:11],as.character)
+
+#We export the file 
+write.csv(CC_Synd_BBMO_All,"CC_Synd_BBMO_All.csv")
+```
+
+```{r bubbleplot SOLA}
+#Define the 'Status_CC' and the 'CC_abund_Synd' dataframes to the data set that we will use
+Status_CC<-Status_CC_SOLA
+CC_abund_Synd<-CC_abund_Synd_SOLA_clean
+#Apply the 'temporality_year' function to the SOLA dataset
+CC_Synd_SOLA_Bubbleplot<-temporality_year(CC_abund_Synd_SOLA_clean)
+#We export the file 'CC_Synd_BBMO_Bubbleplot'
+write.csv(CC_Synd_SOLA_Bubbleplot,"CC_Synd_SOLA_Bubbleplot.csv")
+
+#Extract the 'All' list and convert it to a dataframe 
+CC_Synd_SOLA_All<-as.data.frame(CC_Synd_SOLA_Bubbleplot['All'])
+
+#Remove the string 'All.' part before each columns name
+colnames(CC_Synd_SOLA_All)<-str_sub(colnames(CC_Synd_SOLA_All),5)
+
+#Convert the lists in characters
+
+CC_Synd_SOLA_All[,5:11]<-sapply(CC_Synd_SOLA_All[,5:11],as.character)
+
+#We export the file 
+write.csv(CC_Synd_SOLA_All,"CC_Synd_SOLA_All.csv")
+```
+
+
+
+

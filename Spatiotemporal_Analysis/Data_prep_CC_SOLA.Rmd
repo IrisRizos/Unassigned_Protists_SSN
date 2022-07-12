@@ -1,0 +1,209 @@
+---
+title: "Data preparation SOLA"
+author: "Thomas Finet"
+date: "08/11/2021"
+output: html_document
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tidyverse)
+library(openxlsx)
+library(readxl)
+library(vegan)
+```
+
+## Syndiniales data importation
+
+Import abundance matrix of Connected Components (CCs) and metadata in order to extract the information related to the SOLA Temporal Series.
+
+```{r}
+CC_abund_Synd_SOLA <- read.csv("CC_abund_Synd.csv",h=T, sep=",")
+Metadata_all <- read.csv("Metadata_all_1211.csv",h=T, sep=",")
+Metadata_SOLA<-Metadata_all %>% filter(Dataset=='SOLA')
+Metadata_SOLA<-Metadata_SOLA[,-1]
+```
+
+## Creation of data-frame
+
+```{r}
+# We select the samples that the belong to the SOLA time series
+CC_abund_Synd_SOLA_clean<-select(CC_abund_Synd_SOLA, starts_with("X"))
+# Addition of CC ids and genus status info
+CC_abund_Synd_SOLA_clean$CC_id<-CC_abund_Synd_SOLA$CC_id
+CC_abund_Synd_SOLA_clean$Genus_status<-CC_abund_Synd_SOLA$Genus_status
+# Set CC ids as row names
+rownames(CC_abund_Synd_SOLA_clean)<-CC_abund_Synd_SOLA_clean$CC_id
+# Remove CC id and X columns
+CC_abund_Synd_SOLA_clean<-subset(CC_abund_Synd_SOLA_clean, select = -c(CC_id,X))
+# Transpose table
+CC_abund_Synd_SOLA_clean<-t(CC_abund_Synd_SOLA_clean)
+CC_abund_Synd_SOLA_clean<-as.data.frame(CC_abund_Synd_SOLA_clean)
+# Save genus status info and remove from abundance table
+Status<-CC_abund_Synd_SOLA_clean[144,]
+CC_abund_Synd_SOLA_clean<-CC_abund_Synd_SOLA_clean[-144,]
+# Rename samples so that they match metadata sample names
+rownames(CC_abund_Synd_SOLA_clean)<-str_sub(rownames(CC_abund_Synd_SOLA_clean),7)
+rownames(CC_abund_Synd_SOLA_clean)<-str_extract(rownames(CC_abund_Synd_SOLA_clean), "^\\d+")
+# Set rownames as column "Sample"
+CC_abund_Synd_SOLA_clean<-rownames_to_column(CC_abund_Synd_SOLA_clean, var="Sample")
+# Set abundance values to numeric type
+CC_abund_Synd_SOLA_clean[,2:length(CC_abund_Synd_SOLA_clean)]<-sapply(CC_abund_Synd_SOLA_clean[,2:length(CC_abund_Synd_SOLA_clean)],as.numeric)
+```
+
+Check if there are samples with null abundance
+
+```{r}
+# Calculate sum of abundance per sample
+CC_abund_Synd_SOLA_clean$Sum<-rowSums(CC_abund_Synd_SOLA_clean[2:length(CC_abund_Synd_SOLA_clean)])
+# Extract samples with total abundance = 0
+null_samples<-subset(CC_abund_Synd_SOLA_clean,Sum==0)
+print(null_samples$Sample)
+# Remove Sum column
+CC_abund_Synd_SOLA_clean<-subset(CC_abund_Synd_SOLA_clean, select=-c(Sum))
+```
+
+Check if there are Connected Components with null abundance
+
+```{r}
+# Compute sums of CCs abundance
+CC_sum<-colSums(CC_abund_Synd_SOLA_clean[2:length(CC_abund_Synd_SOLA_clean)])
+# Set Sample column as rownames, remove Sample column and add of Sum row
+rownames(CC_abund_Synd_SOLA_clean)<-CC_abund_Synd_SOLA_clean$Sample
+CC_abund_Synd_SOLA_clean_2<-subset(CC_abund_Synd_SOLA_clean, select=-c(Sample))
+CC_abund_Synd_SOLA_clean_2<-rbind(CC_abund_Synd_SOLA_clean_2,CC_sum)
+CC_abund_Synd_SOLA_clean_2<-as.data.frame(CC_abund_Synd_SOLA_clean_2)
+# Removal of CCs with null abundance and Sum row
+CC_abund_Synd_SOLA_clean_2<-CC_abund_Synd_SOLA_clean_2[,(CC_abund_Synd_SOLA_clean_2[144,]) > 0]
+CC_abund_Synd_SOLA_clean_3<-CC_abund_Synd_SOLA_clean_2[1:143,]
+# Get genus taxonomic status for selected CCs
+CC_id <- data.frame(colnames(CC_abund_Synd_SOLA_clean_3))
+names(CC_id)[1]<-"CC_id"
+Status<-data.frame(t(Status))
+Status$CC_id<-rownames(Status)
+Status2<-merge(CC_id,Status)
+```
+
+Cross-check sample correspondence between abundance table and metadata
+
+```{r}
+# Samples present in metadata but not abundance table
+cor1<-anti_join(Metadata_SOLA,CC_abund_Synd_SOLA_clean,by=c("Sample")) # we can use the first abundance table as no sample was removed
+# Keep metadata in accordance with samples present in abundance table
+Metadata_SOLA<-Metadata_SOLA[which(Metadata_SOLA$Sample %in% CC_abund_Synd_SOLA_clean$Sample),]
+# Samples present in abundance table but not metadata
+c2<-anti_join(CC_abund_Synd_SOLA_clean,Metadata_SOLA,by=c("Sample"))
+```
+
+## Application of Hellinger distance to abundances
+
+```{r}
+# In order to apply hellinger distance data must be in the format: x=CCs, y=samples (it is the case here)
+CC_abund_Synd_SOLA_clean_hel<-decostand((CC_abund_Synd_SOLA_clean_3), method="hellinger")
+```
+
+## Addition of temporal info to abundnace tables
+
+```{r}
+# Set rownames as first column
+CC_abund_Synd_SOLA_clean_hel$Sample<-row.names(CC_abund_Synd_SOLA_clean_hel)
+# Select temporal data from metadata and merge with abundance table
+Metadata_SOLA_temp<-subset(Metadata_SOLA,select=c(Sample,Month,Year))
+CC_SOLA_Synd_final<-merge(Metadata_SOLA_temp,CC_abund_Synd_SOLA_clean_hel, by="Sample")
+# Pivot final table in order to have samples as rows
+CC_SOLA_Synd_final<-pivot_longer(CC_SOLA_Synd_final,!Sample & !Month & !Year,names_to ="CC",values_to="abundance")
+names(CC_SOLA_Synd_final)[4]<-"CC_id"
+# Add genus taxonomic status
+CC_SOLA_Synd_final<-merge(CC_SOLA_Synd_final,Status2,by="CC_id")
+
+
+```
+
+We then add the seasons to our data, see the structure of the data in terms of month and season coverage, and select the years where the sampling effort allows a complete seasonal coverage for our three datasets.
+
+```{r}
+
+#This function receives a month (x vector) and assigns the corresponding seasons (y vector)
+
+season<-function(x){
+  #Creation of a new vector (y) in which we will store the corresponding seasons
+  y <- vector(mode = "list", length = length(x))
+  #Assignation of the corresponding seasons depending on the month
+  for (i in 1:length(x)){
+  if (x[i]=='October'| x[i]=='November'|x[i]=='September'){y[i]='Autumn'}
+  if (x[i]=='January'|x[i]=='February'|x[i]=='December'){y[i]='Winter'}
+  if (x[i]=='April'|x[i]=='May'|x[i]=='March'){y[i]='Spring'}
+  if (x[i]=='July'|x[i]=='August'|x[i]=='June'){y[i]='Summer'}
+  }
+  return(y)
+}
+```
+
+
+
+```{r}
+#Apply the 'season' function to the data
+CC_SOLA_Synd_final$Season<-as.character(season(CC_SOLA_Synd_final$Month))
+Metadata_SOLA$Season<-as.character(season(Metadata_SOLA$Month))
+
+#The right order of month
+col_order_month<-c("Year","January", "February", "March", "April","May","June","July","August", "September", "October","November", "December")
+#Count the number of sample by Year and by month
+count_month<-Metadata_SOLA%>% group_by(Month)%>% count(Year)%>% pivot_wider(names_from = "Month", values_from = "n")
+#Apply the right order of the month 
+count_month<-count_month[,col_order_month]
+#See the structure of the data in term of month coverage
+print(count_month)
+
+#The right order of seasons 
+col_order_season<-c("Year","Spring","Summer","Autumn","Winter")
+#Count the number of sample by Year and by seasons 
+count_season<-Metadata_SOLA%>% group_by(Season)%>% count(Year)%>% pivot_wider(names_from = "Season", values_from = "n")#Apply the right order of the month 
+#Apply the right order of the seasons 
+count_season<-count_season[,col_order_season]
+#See the structure of the data in term of season coverage
+print(count_season)
+#Select the year with a total season-coverage 
+good_year<-count_season%>% na.omit()%>% select(Year)
+
+#Discard the 'uncomplete' years in the data
+Metadata_SOLA<-Metadata_SOLA%>% filter (Year%in%good_year$Year)
+CC_SOLA_Synd_final<-CC_SOLA_Synd_final %>% filter (Year%in%good_year$Year)
+```
+
+Check if there are Connected Components with null abundance in this new time window
+```{r}
+#Pivot the dataframe
+CC_SOLA_Synd_check<-pivot_wider(CC_SOLA_Synd_final, !Month & !Year & !Genus_status & !Season,names_from = "CC_id", values_from = "abundance")
+
+# Compute sums of CCs abundance
+CC_sum<-colSums(CC_SOLA_Synd_check[2:length(CC_SOLA_Synd_check)])
+# Set Sample column as rownames, remove Sample column and add of Sum row
+rownames(CC_SOLA_Synd_check)<-CC_SOLA_Synd_check$Sample
+CC_SOLA_Synd_check_2<-subset(CC_SOLA_Synd_check, select=-c(Sample))
+CC_SOLA_Synd_check_2<-rbind(CC_SOLA_Synd_check_2,CC_sum)
+CC_SOLA_Synd_check_2<-as.data.frame(CC_SOLA_Synd_check_2)
+# Removal of CCs with null abundance and Sum row
+CC_SOLA_Synd_check_2<-CC_SOLA_Synd_check_2[,(CC_SOLA_Synd_check_2[116,]) > 0]
+CC_SOLA_Synd_check_3<-CC_SOLA_Synd_check_2[1:115,]
+#Store the names of the columns
+CC_present<-colnames(CC_SOLA_Synd_check_3)
+
+#Filter the final dataframe
+CC_SOLA_Synd_final_good<-CC_SOLA_Synd_final[which (CC_SOLA_Synd_final$CC_id %in% CC_present),]
+
+```
+
+
+Creation of final abundance and metadata tables for SOLA
+
+```{r}
+write.csv(CC_SOLA_Synd_final_good,"CC_abund_Synd_SOLA_clean.csv")
+
+write.csv(Metadata_SOLA,"Metadata_SOLA.csv")
+```
+
