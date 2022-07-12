@@ -39,7 +39,9 @@ Marine protists are major components of the oceanic microbiome that remain large
 * BBMO (2004-2013): http://bbmo.icm.csic.es, Blanes Bay, Spain
 
 
-## Data
+## Prerequisites
+
+### Data
 Below are listed the data needed to re-run analysis included in this study. The README of each folder will guide you to the adequate scripts.
 * Global homogenised V4-18S metabarcode dataset (343,165 OTUs): 
 /Homogenisation workflow/ASV_all_18SV4_6MetaB.zip
@@ -49,14 +51,17 @@ Below are listed the data needed to re-run analysis included in this study. The 
 /SSN/Split_Igraph_Synd_id100_cov80.z01-3
 
 
-## Prerequisites
+### Computational ressources
+* ABiMs cluster: http://abims.sb-roscoff.fr/resources/cluster
 
-R, igraph
-Computational aspect: parallelisation, up to 50 GB memory, CPU ?
 
-```
-code
-```
+* ABiMs Rstudio instance: http://abims.sb-roscoff.fr/resources/tools
+
+Demanding computations:
+* All-against-all blast: 100 job parallelisation, computation time of 1 week
+
+* ANOVA on each axis of RDA: up to 50 GB memory, CPU ?
+
 
 ## What about your protist group of interest ?
 
