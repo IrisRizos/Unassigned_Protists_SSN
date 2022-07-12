@@ -23,7 +23,7 @@ Marine protists are major components of the oceanic microbiome that remain large
 ## Datasets
 
 ### Open Sea Campaigns:
-* Malaspina Circumnavigation Expedition (2010-2011): Tropical/Subtropical Ocean (latitude amplitude ?), https://aslopubs.onlinelibrary.wiley.com/doi/10.1002/lob.10008
+* Malaspina Circumnavigation Expedition (2010-2011): Tropical/Subtropical Ocean, https://aslopubs.onlinelibrary.wiley.com/doi/10.1002/lob.10008
 
 
 * MOOSE (2017, 2018): West Mediterranean, https://www.moose-network.fr
