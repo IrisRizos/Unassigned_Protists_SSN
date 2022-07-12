@@ -60,7 +60,7 @@ Below are listed the data needed to re-run analysis included in this study. The 
 Demanding computations:
 * All-against-all blast: 100 job parallelisation, computation time of 1 week
 
-* ANOVA on each axis of RDA: up to 50 GB memory, CPU ?
+* ANOVA on each axis of RDA: 4 CPUs, mem 50GB
 
 
 ## What about your protist group of interest ?
