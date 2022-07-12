@@ -19,6 +19,26 @@ By:
 
 Marine protists are major components of the oceanic microbiome that remain largely unrepresented in culture collections and genomic reference databases. The exploration of this uncharted protist diversity in oceanic communities relies essentially on the study of genetic markers as taxonomic barcodes. Nevertheless, we report that across 6 environmental planktonic surveys, ½ of genetic barcodes remain taxonomically unassigned at the genus level, limiting the understanding of the ecological implications of many protist lineages. Among them, parasitic Dinoflagellata (i.e. Syndiniales) appear as the least described protist group while being key actors in marine food webs at a global scale. We have developed a FAIR computational workflow integrating diverse metabarcoding datasets, in order to infer large scale ecological patterns at a fine-grained taxonomic resolution, bypassing the limitation of taxonomic assignment. We reveal novel geographic distribution patterns for unassigned Syndiniales genera including sequences shared between disconnected marine photic zones and ubiquitous Syndiniales sequences. From a temporal aspect, we have pinpointed recurrent and seasonally persistent parasite taxa that are also indicative of community dynamics, withholding a potential for ecosystem monitoring. Our results underline the importance of Syndiniales in structuring planktonic communities through space and time, raising questions regarding host-parasite association specificity and the trophic mode of persistent Syndiniales, while providing an innovative framework for prioritizing unassigned protist taxa for further description.
 
+
+## Datasets
+
+### Open Sea Campaigns:
+* Malaspina Circumnavigation Expedition (2010-2011): Tropical/Subtropical Ocean (latitude amplitude ?), https://aslopubs.onlinelibrary.wiley.com/doi/10.1002/lob.10008
+
+
+* MOOSE (2017, 2018): West Mediterranean, https://www.moose-network.fr
+
+### Coastal European Sampling Project:
+* BioMarKs - Biodiversity of Marine euKaryotes ( ): https://www.biodiversa.org/122
+
+### Time-series:
+* ASTAN (): https://www.sb-roscoff.fr/fr/observation/presentation/perimetre-d-etudes/somlit-astan, Roscoff, France
+
+* SOLA ( ): https://www.somlit.fr/banyuls/, Banyuls-sur-Mer, France
+
+* BBMO ( ): http://bbmo.icm.csic.es, Blanes Bay, Spain
+
+
 ## Data
 Below are listed the data needed to re-run analysis included in this study. The README of each folder will guide you to the adequate scripts.
 * Global homogenised V4-18S metabarcode dataset (343,165 OTUs): 
@@ -27,7 +47,6 @@ Below are listed the data needed to re-run analysis included in this study. The 
 
 * Syndiniales network (4,317 CCs): 
 /SSN/Split_Igraph_Synd_id100_cov80.z01-3
-
 
 
 ## Prerequisites
