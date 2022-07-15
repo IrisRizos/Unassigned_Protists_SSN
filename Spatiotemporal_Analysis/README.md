@@ -2,7 +2,7 @@
 ## Spatial analysis, files list:
 * ### Spatial_expl.Rmd : 
 All the steps required for the analyses are included in the Rmarkdown document.
-Input: Synd CCs ??
+Input: Igraph_Synd_id100_cov80. ??
 
 * ### Metadata_RDA.csv: 
 
