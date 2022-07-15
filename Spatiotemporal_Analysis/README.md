@@ -26,7 +26,7 @@ Input: /SSN/Split_Igraph_Synd_id100_cov80.z01-3, /Metadata/Metadata_all_1211.csv
 Output: CC_abund_Synd_[TS name]_clean.csv, Metadata_[TS name].csv
 
 
-* ### Step 2: Treatment.Rmd
+* ### Step 2: Data_treatment.Rmd
 
 Input: CC_abund_[TS name]_clean.csv, Metadata_[TS name].csv
 Output: CC_Synd_[TS name]_All.csv
