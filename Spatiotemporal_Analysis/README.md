@@ -52,8 +52,7 @@ Output: Table_S2_rythmic.csv, Table_S3_escoufier_rythmic.csv
 
 For BBMO time-series, the Rscript was run on the cluster via: Rythmicity_batch_CC_BBMO.sh
 
-*Correspondance:*
-
+*Correspondance with scheme:*
 *CC_Synd_[TS name] _All.csv --> Table_S1_escoufier.csv*
 *Rhythmicity_CC_[TS name].csv --> Table_S2_rythmic.csv*
 *Rhythmicity_[TS name]_escouf.csv --> Table_S3_escoufier_rythmic.csv*
