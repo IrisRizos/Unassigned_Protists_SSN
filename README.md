@@ -15,7 +15,7 @@ By:
 * Exploring spatial and temporal patterns of unassigned sequence clusters at a selected taxonomic level and for a selected protist group
 
 
-![This is an image](https://github.com/IrisRizos/Unassigned_Protists_SSN/blob/9e9351a629bbc257cf4f758bd7aec8a6572cbc39/Graphical_abstract.pdf)
+![This is an image](Graphical_abstract.pdf)
 
 
 ## Abstract
