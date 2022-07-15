@@ -19,25 +19,20 @@ For each RDA axis the computational ressources required are greater and was run 
 
 ## Temporal analysis, files list:
 
-* ### Step 1: TimeSeries_CC.Rmd
+* ### Step 1: TimeSeries_CC.Rmd, Data_Prep.Rmd
+
 Extraction of Syndiniales abundance tables in time-series (TS) clusters.
-Input: /SSN/Split_Igraph_Synd_id100_cov80.z01-3
-Output: CC_abund_Synd.csv
-
-
-* ### Step 2: Data_Prep.Rmd
-
-Input: CC_abund_Synd.csv, /Metadata/Metadata_all_1211.csv
+Input: /SSN/Split_Igraph_Synd_id100_cov80.z01-3, /Metadata/Metadata_all_1211.csv
 Output: CC_abund_Synd_[TS name]_clean.csv, Metadata_[TS name].csv
 
 
-* ### Step 3: Treatment.Rmd
+* ### Step 2: Treatment.Rmd
 
 Input: CC_abund_[TS name]_clean.csv, Metadata_[TS name].csv
 Output: CC_Synd_[TS name]_All.csv
 
 
-* ### Step 4: Escoufier_[TS name].r
+* ### Step 3: Escoufier_[TS name].r
 
 Input: CC_abund_[TS name]_clean.csv
 Output: Table_S1_escoufier.csv
@@ -45,7 +40,7 @@ Output: Table_S1_escoufier.csv
 Scripts are demanding in computation power and were run on a cluster via the bash scripts: Escouffier_CC_[TS name].sh
 Output: [TS name]_CC_RV.out
 
-* ### Step 5: Rythmicity_[TS name].Rmd
+* ### Step 4: Rythmicity_[TS name].Rmd
 
 Input: [TS name]_CC_RV.out, Table_S1_escoufier.csv, CC_Synd_[TS name]_All.csv, Metadata_[TS name].csv, CC_abund_Synd_[TS name]_clean.csv
 Output: Table_S2_rythmic.csv, Table_S3_escoufier_rythmic.csv
