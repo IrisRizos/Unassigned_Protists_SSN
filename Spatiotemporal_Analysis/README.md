@@ -2,6 +2,7 @@
 ## Spatial analysis, files list:
 * ### Spatial_expl.Rmd : 
 All the steps required for the analyses are included in the Rmarkdown document.
+Input: Synd CCs ??
 
 * ### Metadata_RDA.csv: 
 
@@ -15,4 +16,11 @@ For the global RDA the ANOVA was run through Rstudio and the commands are includ
 For each RDA axis the computational ressources required are greater and was run with Rscript_Anova_RDA.R was run on ABiMs cluster through the bash script Anova_RDA.sh. The results of the ANOVA are pasted in the Rmd (lines 852-874).
 
 
-## Temporal analysis:
+## Temporal analysis, files list:
+
+* ### Step 1: TimeSeries_CC.Rmd
+Extraction of 
+
+* ### Step 2: Data_Prep.Rmd
+
+Input files: 
