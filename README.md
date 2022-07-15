@@ -62,8 +62,9 @@ Demanding computations:
 
 * ANOVA on each axis of RDA: 4 CPUs, mem 50GB
 
-* Escoufier's equivalent vectors: 6-16 CPUs, mem 40-100GB
+* Escoufier's equivalent vectors: 8-16 CPUs, mem 40-100GB
 
+* Lomb-Scargle Periodogram algorithm: 8 CPUs, mem 70GB
 
 ## What about your protist group of interest ?
 
