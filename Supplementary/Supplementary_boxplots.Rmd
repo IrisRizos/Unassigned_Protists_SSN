@@ -1,0 +1,225 @@
+---
+title: "Temporality_Supplementary Materials"
+author: "Thomas Finet"
+date: "12/07/2022"
+output: html_document
+---
+
+```{r }
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+library (readr)
+```
+
+
+
+################################################################  ASTAN  ######################################################
+
+
+
+Import the hellinger-transformed abundance matrix of Connected Components (CCs)
+
+```{r}
+CC_abund_Synd_ASTAN_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_abund_Synd_ASTAN_clean.csv")
+CC_abund_Synd_ASTAN_clean<-CC_abund_Synd_ASTAN_clean[,-1]
+
+```
+
+Import the rythmic and escouffier-selected CC
+```{r}
+Rhythmicity_ASTAN_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/Rhythmicity_ASTAN_final.csv")
+Rhythmicity_ASTAN_final<-Rhythmicity_ASTAN_final[,-1]
+```
+
+Import the treated data
+```{r}
+CC_Synd_ASTAN_All <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_Synd_ASTAN_All.csv")
+CC_Synd_ASTAN_All<-CC_Synd_ASTAN_All[,-1]
+```
+
+#Processing
+For each CC, we compute a monthly mean by year, and then the mean of the yearly-month mean
+```{r}
+CC_abund_Synd_ASTAN_clean_YM_mean<-CC_abund_Synd_ASTAN_clean%>% group_by(CC_id, Month,Year)%>% summarize(mean_abundance_month_year= mean(abundance))
+CC_abund_Synd_ASTAN_clean_Y_mean<-CC_abund_Synd_ASTAN_clean_YM_mean%>%group_by(CC_id,Month)%>% summarize(mean_abundance_year= mean(mean_abundance_month_year))
+```
+
+Filter the Rhythmicity table to only keep the rythmic CC, which has a coherent period (less than the length of the time serie)
+
+```{r}
+Rhythmicity_ASTAN_final<-Rhythmicity_ASTAN_final%>% filter(Periodicity==1)%>% filter(Period<2900)
+```
+
+We then add the genus status, if they are rythmic and selected using the escouffier criterion
+
+```{r}
+#Isolate the Genus_status 
+Status<-CC_abund_Synd_ASTAN_clean%>% select(CC_id,Genus_status)%>% unique()
+
+#Add the Rhythmicity/escouffier informations
+
+#Creat a new column
+Status$Rythmic<-0
+#Add the value one when the CC is in the escouffier/Rhythmicity table
+Status[which(Status$CC_id%in%(Rhythmicity_ASTAN_final$CC_id)),"Rythmic"]<-1
+#We merge both datasets
+CC_abund_Synd_ASTAN_clean_monthlyplot<-merge(CC_abund_Synd_ASTAN_clean_Y_mean,Status,by="CC_id")
+
+```
+
+## Plot
+
+We create boxplots by using the log-transformed abundances mean by month for the known and unknown CC. 
+
+```{r plot}
+plot<- ggplot (data=CC_abund_Synd_ASTAN_clean_monthlyplot, aes (x=Month,y=log(mean_abundance_year), fill=Genus_status))+ 
+  geom_boxplot()
+plot+theme_classic()+
+  scale_fill_manual(values=c('firebrick','gray33')) +
+  scale_x_discrete(limits = c("January", "February", "March", "April","May","June","July","August", "September", "October","November", "December"))+
+#Add the rythmic and escouffier selected CC abundances in each month
+  geom_dotplot(filter(CC_abund_Synd_ASTAN_clean_monthlyplot,Rythmic==1),mapping=aes (x=Month,y=log(mean_abundance_year)),binaxis='y', binpositions="all",binwidth=0.14)
+```
+
+
+
+
+
+################################################################  BBMO  ######################################################
+
+
+
+
+Import the hellinger-transformed abundance matrix of Connected Components (CCs)
+
+```{r}
+CC_abund_Synd_BBMO_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_abund_Synd_BBMO_clean.csv")
+CC_abund_Synd_BBMO_clean<-CC_abund_Synd_BBMO_clean[,-1]
+
+```
+
+Import the rythmic and escouffier-selected CC
+```{r}
+Rhythmicity_BBMO_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/Rhythmicity_BBMO_final.csv")
+Rhythmicity_BBMO_final<-Rhythmicity_BBMO_final[,-1]
+```
+
+Import the treated data
+```{r}
+CC_Synd_BBMO_All <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_Synd_BBMO_All.csv")
+CC_Synd_BBMO_All<-CC_Synd_BBMO_All[,-1]
+```
+
+#Processing
+For each CC, we compute a monthly mean by year, and then the mean of the yearly-month mean
+```{r}
+CC_abund_Synd_BBMO_clean_YM_mean<-CC_abund_Synd_BBMO_clean%>% group_by(CC_id, Month,Year)%>% summarize(mean_abundance_month_year= mean(abundance))
+CC_abund_Synd_BBMO_clean_Y_mean<-CC_abund_Synd_BBMO_clean_YM_mean%>%group_by(CC_id,Month)%>% summarize(mean_abundance_year= mean(mean_abundance_month_year))
+```
+
+Filter the Rhythmicity table to only keep the rythmic CC, which has a coherent period (less than the length of the time serie)
+
+```{r}
+Rhythmicity_BBMO_final<-Rhythmicity_BBMO_final%>% filter(Periodicity==1)%>% filter(Period<2900)
+```
+
+We then add the genus status, if they are rythmic and selected using the escouffier criterion
+
+```{r}
+#Isolate the Genus_status 
+Status<-CC_abund_Synd_BBMO_clean%>% select(CC_id,Genus_status)%>% unique()
+
+#Add the Rhythmicity/escouffier informations
+
+#Creat a new column
+Status$Rythmic<-0
+#Add the value one when the CC is in the escouffier/Rhythmicity table
+Status[which(Status$CC_id%in%(Rhythmicity_BBMO_final$CC_id)),"Rythmic"]<-1
+#We merge both datasets
+CC_abund_Synd_BBMO_clean_monthlyplot<-merge(CC_abund_Synd_BBMO_clean_Y_mean,Status,by="CC_id")
+
+```
+
+## Plot
+
+We create boxplots by using the log-transformed abundances mean by month for the known and unknown CC. 
+
+```{r plot}
+plot<- ggplot (data=CC_abund_Synd_BBMO_clean_monthlyplot, aes (x=Month,y=log(mean_abundance_year), fill=Genus_status))+ 
+  geom_boxplot()
+plot+theme_classic()+
+  scale_fill_manual(values=c('firebrick','gray33')) +
+  scale_x_discrete(limits = c("January", "February", "March", "April","May","June","July","August", "September", "October","November", "December"))+
+#Add the rythmic and escouffier selected CC abundances in each month
+  geom_dotplot(filter(CC_abund_Synd_BBMO_clean_monthlyplot,Rythmic==1),mapping=aes (x=Month,y=log(mean_abundance_year)),binaxis='y', binpositions="all",binwidth=0.14)
+```
+
+
+################################################################  SOLA  ######################################################
+
+
+Import the hellinger-transformed abundance matrix of Connected Components (CCs)
+
+```{r}
+CC_abund_Synd_SOLA_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_abund_Synd_SOLA_clean.csv")
+CC_abund_Synd_SOLA_clean<-CC_abund_Synd_SOLA_clean[,-1]
+
+```
+
+Import the rythmic and escouffier-selected CC
+```{r}
+Rhythmicity_SOLA_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/Rhythmicity_SOLA_final.csv")
+Rhythmicity_SOLA_final<-Rhythmicity_SOLA_final[,-1]
+```
+
+Import the treated data
+```{r}
+CC_Synd_SOLA_All <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_Synd_SOLA_All.csv")
+CC_Synd_SOLA_All<-CC_Synd_SOLA_All[,-1]
+```
+
+#Processing
+For each CC, we compute a monthly mean by year, and then the mean of the yearly-month mean
+```{r}
+CC_abund_Synd_SOLA_clean_YM_mean<-CC_abund_Synd_SOLA_clean%>% group_by(CC_id, Month,Year)%>% summarize(mean_abundance_month_year= mean(abundance))
+CC_abund_Synd_SOLA_clean_Y_mean<-CC_abund_Synd_SOLA_clean_YM_mean%>%group_by(CC_id,Month)%>% summarize(mean_abundance_year= mean(mean_abundance_month_year))
+```
+
+Filter the Rhythmicity table to only keep the rythmic CC, which has a coherent period (less than the length of the time serie)
+
+```{r}
+Rhythmicity_SOLA_final<-Rhythmicity_SOLA_final%>% filter(Periodicity==1)%>% filter(Period<2900)
+```
+
+We then add the genus status, if they are rythmic and selected using the escouffier criterion
+
+```{r}
+#Isolate the Genus_status 
+Status<-CC_abund_Synd_SOLA_clean%>% select(CC_id,Genus_status)%>% unique()
+
+#Add the Rhythmicity/escouffier informations
+
+#Creat a new column
+Status$Rythmic<-0
+#Add the value one when the CC is in the escouffier/Rhythmicity table
+Status[which(Status$CC_id%in%(Rhythmicity_SOLA_final$CC_id)),"Rythmic"]<-1
+#We merge both datasets
+CC_abund_Synd_SOLA_clean_monthlyplot<-merge(CC_abund_Synd_SOLA_clean_Y_mean,Status,by="CC_id")
+
+```
+
+## Plot
+
+We create boxplots by using the log-transformed abundances mean by month for the known and unknown CC. 
+
+```{r plot}
+plot<- ggplot (data=CC_abund_Synd_SOLA_clean_monthlyplot, aes (x=Month,y=log(mean_abundance_year), fill=Genus_status))+ 
+  geom_boxplot()
+plot+theme_classic()+
+  scale_fill_manual(values=c('firebrick','gray33')) +
+  scale_x_discrete(limits = c("January", "February", "March", "April","May","June","July","August", "September", "October","November", "December"))+
+#Add the rythmic and escouffier selected CC abundances in each month
+  geom_dotplot(filter(CC_abund_Synd_SOLA_clean_monthlyplot,Rythmic==1),mapping=aes (x=Month,y=log(mean_abundance_year)),binaxis='y', binpositions="all",binwidth=0.14)
+```

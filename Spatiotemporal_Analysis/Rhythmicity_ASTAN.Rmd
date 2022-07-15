@@ -1,0 +1,174 @@
+---
+title: "rhythmicity ASTAN CC"
+author: "Thomas Finet"
+date: "21/04/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(lomb)
+library(readr)
+library(dplyr)
+library(tibble)
+library(tidyr)
+```
+
+## Data importation
+
+```{r}
+#Import the cleaned data and remove the first column
+CC_abund_Synd_ASTAN_clean <- read_csv("CC_abund_Synd_ASTAN_clean.csv")%>% select(-1)
+#Import the cleaned Metadata and remove the first column
+Metadata_ASTAN <- read_csv("Metadata_ASTAN.csv")%>% select(-1)
+#Import the dataframe used to make the bubbleplots and remove the first column
+CC_Synd_ASTAN_All <- read_csv("CC_Synd_ASTAN_All.csv")%>% select(-1)
+#Import the selected Escouffier's vectors
+selection_escoufier_all <- read_csv("selection_escoufier_all_ASTAN.csv")
+#Import the RV's of the selected Escouffier's vector 
+ASTAN_CC_RV <- read_csv("ASTAN_CC_RV.out", 
+    col_names = FALSE)
+```
+
+## Merge the Escouffier's selected vectors and their RVs
+
+Select the escouffier'selected vectors and add their RV's, that are in the 'ASTAN_CC_RV' file
+
+```{r}
+#Select the names of the escouffier'selected vectors and their order 
+selection_escoufier_all<-colnames(selection_escoufier_all)
+#Convert to a dataframe 
+selection_escoufier_all<-as.data.frame(selection_escoufier_all)
+#Remove the order
+selection_escoufier_all<-selection_escoufier_all[-1,]
+#Convert to a dataframe
+selection_escoufier_all<-as.data.frame(selection_escoufier_all)
+#Name the column'CC_id'
+colnames(selection_escoufier_all)<-"CC_id"
+#Put the rownames in a column named 'Escouffier'
+selection_escoufier_all<-rownames_to_column(selection_escoufier_all, var="Escouffier")
+
+#Delete the first column
+ASTAN_CC_RV<-ASTAN_CC_RV[,-1]
+#Rename the column RV
+colnames(ASTAN_CC_RV)<-"RV"
+#Round the RVs to three digits
+ASTAN_CC_RV$RV<-round(as.numeric(substr(ASTAN_CC_RV$RV,5,nchar(ASTAN_CC_RV$RV))),3)
+#Remove the last row (because he is not in the vectors selected (as RV>0.75))
+ASTAN_CC_RV<-ASTAN_CC_RV[-nrow(ASTAN_CC_RV),]
+#Add the Rv column to the 'selection_escoufier_all' dataframe
+selection_escoufier_all$RV<-ASTAN_CC_RV$RV
+```
+
+We then merge the 'selection_escoufier_all' dataframe, which contains the Escouffier's information of all the CC selected, with the 'CC_Synd_ASTAN_All' dataframe previously computed, which contains information on the seasonal structure of each CC.
+
+```{r}
+#Add the Escouffier's vectors 
+Table_CC_ASTAN_Synd<-merge(CC_Synd_ASTAN_All,selection_escoufier_all,group_by='CC_id')
+#Order according to Escouffier number
+Table_CC_ASTAN_Synd<-Table_CC_ASTAN_Synd[order(as.numeric(Table_CC_ASTAN_Synd$Escouffier)),]
+#Put Escouffier number before the 'J' column
+Table_CC_ASTAN_Synd<-Table_CC_ASTAN_Synd%>% relocate("Escouffier",.before='J')
+```
+
+
+## rhythmicity function
+
+Create a function that compute the periodicity of each Connected Component (CC) and the parameters associated 
+
+```{r}
+#A function for the Escouffier's selected CC
+
+rhythmicity<-function (X,Y,Z){
+  #Convert the dates in a good format
+  d<-as.Date(X$Date,"%d/%m/%Y")
+  d<-as.numeric(d)
+  #Convert 'd' to a dataframe 
+  d<-as.data.frame(d)
+  #Compute the time step, by setting the first measure as 0
+  d<-d$d-d[1,1]
+  #Convert 'd' to a dataframe 
+  d<-as.data.frame(d)
+  
+  #Create the columns that will contain informations regarding the rhythmicity
+  Z$PNmax<-0 #PNmax
+  Z$Pvalue<-0#Pvalue of the PNmax
+  Z$Period<-0#Period of the PNmax
+  Z$Periodicity<-0#If it is periodic or not
+  
+  for (i in 1:nrow(Z)){
+    #Find the rank of the abundance dataframe's column that correspond to the CC in the Escouffier's selection
+    col_numb<-which(names(Y)==Z[i,1])
+    #IASTANte the column
+    col<-as.data.frame(Y[,col_numb])[,1]
+    #Compute the Lomb Scargle Periodogram using the 'lsp' function
+    lsp_1<-lsp(col,times=d$d,type='period',normalize ='press', ofac=5)
+    #Compute the summary
+    lsp_ASTAN<-summary(lsp_1)
+    #Add the PNmax to our final dataframe
+    Z[i,'PNmax']<-round(as.numeric(lsp_ASTAN[9,1]),3)
+    #Add the P value to our final dataframe
+    Z[i,'Pvalue']<-round(as.numeric(lsp_ASTAN[12,1]),4)
+    #Add the P value to our final dataframe
+    Z[i,'Period']<-round(as.numeric(lsp_ASTAN[10,1]),2)
+    #Compute if the CC is periodic or not
+    if (Z[i,'PNmax']>10){Z[i,'Periodicity']<-TRUE} 
+    else {Z[i,'Periodicity']<-FALSE}
+    
+  }
+  return(Z)
+}
+
+
+```
+
+
+## Results 
+
+### rhythmicity of the Escouffier's selected CC
+
+We apply the 'rhythmicity' function to the 'Table_CC_ASTAN_Synd' data, i.e. the seasonal information of the CC selected using Escouffier's criterion,  and export the result 
+
+```{r}
+#Pivot the dataframe, in order to compute the rhythmicity of the CC
+Y<-pivot_wider(CC_abund_Synd_ASTAN_clean, !Month & !Year & !Genus_status & !Season,names_from = "CC_id", values_from = "abundance")
+#Order the dataframe in the original chronology
+Y<-Y[order(Y$Sample),]
+#Apply the 'rhythmicity' function
+rhythmicity_ASTAN_final<-rhythmicity (Metadata_ASTAN, Y,Table_CC_ASTAN_Synd)
+#Reorder the column
+col_order <- c("Escouffier","RV" ,"CC_id","J","H","number_season","n","mean_abundance","2009","2010","2011","2012","2013","2014","2015","2016","Status","PNmax","Pvalue","Period","Periodicity")
+#Apply the order of the column to our treated dataframe
+rhythmicity_ASTAN_final<-rhythmicity_ASTAN_final[,col_order]
+#Export the dataframe 'Rhythmicity_ASTAN_escouf'
+write.csv(rhythmicity_ASTAN_final,"Rhythmicity_ASTAN_escouf.csv")
+```
+
+### rhythmicity of all the CC
+
+We apply the 'rhythmicity' function to all the CC
+
+```{r}
+#Create a dataframe that will store the rhythmicity informations for all the CC
+X<-pivot_wider(CC_abund_Synd_ASTAN_clean,  !Month & !Year & !abundance & !Season,names_from = "CC_id", values_from = "Genus_status")
+#Transpose it 
+X<-t(X[1,-1])
+#Convert it to a dataframe 
+X<-as.data.frame(X)
+#Rename the 'Status' column
+colnames(X)<-"Status"
+#Create a 'CC_id' column
+X<-rownames_to_column(X, var="CC_id")
+#Apply the 'rhythmicity' function
+rhythmicity_all_ASTAN_final<-rhythmicity (Metadata_ASTAN, Y,X)
+#Extract the CC which are periodic
+periodic<-rhythmicity_all_ASTAN_final%>% subset(Periodicity==1)%>% select(-"Status")
+#Merge with the 'CC_Synd_ASTAN_All' dataframe, which contains seasonal information on the CC. 
+Periodic_CC_ASTAN<-merge(periodic,CC_Synd_ASTAN_All, by='CC_id')
+#Reorder the column
+col_order <- c("CC_id","J","H","number_season","n","mean_abundance","2009","2010","2011","2012","2013","2014","2015","2016","Status","PNmax","Pvalue","Period","Periodicity")
+#Apply the order of the column to our treated dataframe
+Periodic_CC_ASTAN<-Periodic_CC_ASTAN[,col_order]
+#Export the dataframe 'Rhythmicity_CC_ASTAN'
+write.csv(Periodic_CC_ASTAN,"Rhythmicity_CC_ASTAN.csv")
+```
