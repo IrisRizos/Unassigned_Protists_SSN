@@ -15,7 +15,7 @@ By:
 * Exploring spatial and temporal patterns of unassigned sequence clusters at a selected taxonomic level and for a selected protist group
 
 
-![Graphical](Graphical_abstract.pdf)
+![Graphical](Graphical_abstract.png)
 
 
 ## Abstract
