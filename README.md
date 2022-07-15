@@ -62,28 +62,31 @@ Demanding computations:
 
 * ANOVA on each axis of RDA: 4 CPUs, mem 50GB
 
+* Escoufier's equivalent vectors: 6-16 CPUs, mem 40-100GB
+
 
 ## What about your protist group of interest ?
 
 This protocol can be freely re-used to explore the spatiotemporal patterns of any protist group ! The steps are the following:
-* Download the network including all protist groups: 
+* ### Download the network including all protist groups: 
 
 
 Folder SSN, files Split_Igraph_all_.z0 (see README of SSN folder)
 
 
-* Select your target group: 
+* ### Select your target protist group: 
 
 Indicate the taxonomic level and id of the group (e.g. Class==Syndiniales) in script SSN_Synd.Rmd (lines 101-109): this will subtract from the network only the clusters (Connected Components) composed of sequences of your chosen group along with their metadata.
 N.b. if you are also curious about assigned / unassigned sequences at low taxonomic levels (e.g. genus) within your target group, you can further refine your cluster selection at lines 202-211.
 
-* Spatiotemporal exploration:
+* ### Spatiotemporal exploration:
 
 After selecting clusters of your target protist group:
 For spatial analysis run script /Spatiotemporal Analysis/Spatial_expl.Rmd
 
-For temporal analysis follow guidelines of the ?
+For temporal analysis follow guidelines of the /Spatiotemporal Analysis/ folder.
 
+* ### V4-18S sequence implementation:
 
 It is also possible to implement your own sequences and see how they clusterise among the SSN. Just note that a computation time of 1 week is required to run the all-against-all alignment with the updated sequence dataset + 1-2h for network creation by Igraph with R. After that, you can catch up the protocol from the network clusterisation step (Script: SSN_Synd.Rmd, line 68).
 
