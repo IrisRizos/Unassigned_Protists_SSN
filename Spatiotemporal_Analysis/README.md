@@ -48,10 +48,13 @@ Output: [TS name]_CC_RV.out
 * ### Step 5: Rythmicity_[TS name].Rmd
 
 Input: [TS name]_CC_RV.out, Table_S1_escoufier.csv, CC_Synd_[TS name]_All.csv, Metadata_[TS name].csv, CC_abund_Synd_[TS name]_clean.csv
-Output: 
+Output: Table_S2_rythmic.csv, Table_S3_escoufier_rythmic.csv
 
-// Correspondance:
-// CC_Synd_[TS name] _All.csv --> Table_S1_escoufier.csv
-// Rhythmicity_CC_[TS name].csv --> Table_S2_rythmic.csv
-// Rhythmicity_[TS name]_escouf.csv --> Table_S3_escoufier_rythmic.csv
+For BBMO time-series, the Rscript was run on the cluster via: Rythmicity_batch_CC_BBMO.sh
+
+* * Correspondance:
+
+* * CC_Synd_[TS name] _All.csv --> Table_S1_escoufier.csv
+* * Rhythmicity_CC_[TS name].csv --> Table_S2_rythmic.csv
+* * Rhythmicity_[TS name]_escouf.csv --> Table_S3_escoufier_rythmic.csv
 
