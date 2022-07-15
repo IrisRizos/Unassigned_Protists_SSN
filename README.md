@@ -1,4 +1,4 @@
-# Exploring the marine realm of unassigned taxonomic protist diversity: parasites in the spotlight
+# Beyond the limits of the unassigned protist microbiome: inferring large-scale spatiotemporal patterns of marine parasites at low taxonomic resolution
 
 Exploration of taxinomically unassigned protist genetic barcode sequences across different V4-18S datasets. 
 
