@@ -1,0 +1,171 @@
+---
+title: "Temporal analysis of unassigned Syndiniales genera"
+author: "Iris Rizos"
+date: "12/07/2022"
+output: 
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=T, results='hide'}
+# setwd("/shared/projects/formaldark/R_igraph/Final_files/")
+
+# Import packages
+library(igraph)
+library(rlist)
+library(dplyr)
+library(reshape)
+library(ggplot2)
+library(RColorBrewer)
+```
+
+# 1. Extraction of abundance tables
+
+```{r}
+
+# Import Syndiniales CCs
+dg_synd <- readRDS("Igraph_Synd_id100_cov80.RDS")
+
+# Select CCs 100% unassigned at Genus 
+dg_synd_uk <- list()
+for (i in dg_synd) {
+  t <- table(V(i)$Genus_status)
+  t <- data.frame(table(V(i)$Genus_status))
+  if (t[1,1] == "Unknown" && nrow(t)==1) {
+    dg_synd_uk <- list.append(dg_synd_uk,i)
+  }
+}
+
+# Function for sample and abundance of each CC
+#######################################################
+###*************************************************###
+## For all CC of a graph ##
+abund.info <- function(CC) {
+  # Get the sample name
+  a <- data.frame((V(CC)$name))
+  a[,1] <- as.character(a[,1])
+  
+  library(stringr)
+  b <- data.frame(str_split_fixed(a[,1], "_", 4))
+  
+  # Split sample name and abundance info depending on dataset
+  sample <- c()
+  abund <- c()
+  for(i in 1:nrow(b)) {
+    if (b[i,2] == "AstanTS") { 
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[2])))
+    }
+    else if (b[i,2] == "BlanesTS") {
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[2])))
+    }
+    else if (b[i,3] == "MalaSurf") {
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[2])))
+    }
+    else if (b[i,2] == "MOOSE") {
+      sample <- c(sample,paste(b[i,3])) ; 
+      abund <- c(abund,as.numeric(paste(b[i,4])))
+    }
+    else if (b[i,2] == "SolaTS") {
+      sample <- c(sample,paste(b[i,3])) ; 
+      abund <- c(abund,as.numeric(paste(b[i,4])))
+    }
+    else if (b[i,2] == "Biomarks") {
+      sample <- c(sample,paste(b[i,3])) ; 
+      abund <- c(abund,as.numeric(paste(b[i,4])))
+    }
+    else if (b[i,3] == "MalaVP") {
+      k <- str_split_fixed(b[i,4], "_", 3) ;
+      sample <- c(sample,paste(b[i,3],k[1],k[2],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[3])))
+    }
+    else {
+      k <- str_split_fixed(b[i,4], "_", 5) ;
+      sample <- c(sample,paste(b[i,3],k[1],k[2],k[3],k[4],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[5])))
+    }
+  }
+  
+  # Data frame with all rows of a CC
+  dff <- data.frame(sample, abund)
+  
+  return(dff) 
+}
+###*************************************************###
+#######################################################
+d = lapply(dg_synd_uk,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_synd_uk), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Data frame with columns: CC_id, sample, abund, genus status
+df_CC$CC_id = paste(rep("CC_unknown_",nrow(df_CC)),df_CC$CC_id, sep = "")
+df_CC_unknown <- df_CC[c("CC_id","sample","abund")]
+df_CC_unknown$abund <- as.numeric(paste(df_CC$abund))
+
+# Select CCs containing sequences with known taxonomy at genus rank
+dg_synd_k <- list()
+for (i in dg_synd) {
+  t <- table(V(i)$Genus_status)
+  t <- data.frame(table(V(i)$Genus_status))
+  if (t[1,1] == "Known" && nrow(t)>=1) {
+    dg_synd_k <- list.append(dg_synd_k,i)
+  }
+}
+
+# Function for sample and abundance of each CC
+d = lapply(dg_synd_k,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_synd_k), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Data frame with columns: CC_id, sample, abund, genus status
+df_CC$CC_id = paste(rep("CC_known_",nrow(df_CC)),df_CC$CC_id, sep = "")
+df_CC_known <- df_CC[c("CC_id","sample","abund")]
+df_CC_known$abund <- as.numeric(paste(df_CC$abund))
+
+# Combine known and unknown CC abundance matrix 
+df_CC <- rbind(df_CC_unknown, df_CC_known)
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC, CC_id~sample, sum)
+
+# Add Genus_status column
+Genus_status <- rep("Known",nrow(abund_CC))
+abund_CC <- cbind(abund_CC,Genus_status)
+abund_CC$Genus_status[abund_CC$CC_id %like% "unknown"] <- "Unknown"
+
+# Check number of CCs from each status
+nrow(abund_CC[abund_CC$Genus_status=="Unknown",])
+
+# Save data-frame
+write.csv(abund_CC,"CC_abund_Synd.csv")
+# abund_CC <- read.csv("CC_abund_Synd.csv",sep=",",h=T, row.names=1)
+```
+
+# 2. Processing and analysis
+
+Refer to folders: 
+
+*Processing: Data prep, Treatment
+
+*Analysis:Escoufier, Rythmicity
+
+# 3. Graphical representation 
+
+Refer to code: ?
