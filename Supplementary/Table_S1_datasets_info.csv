@@ -1,21 +1,21 @@
-;BioMarKs;ASTAN;BBMO;SOLA;Malaspina;MOOSE;Global dataset
-Provider;R Logares;M Caracciolo;R Logares;P Galand;R Logares;M Mendez-Sandin;-
-Abundance table;Provided;Provided;Provided;Provided;Provided;Provided;-
-Taxonomic affiliation;Provided;Provided;Provided;Provided;Provided;Provided;-
-DB version of starting taxonomy;NA;PR2 v4.12.0;PR2 v4.11.1;SILVA v128;PR2 v4.11.1;PR2 v4.12.0;-
-Metadata origin;SOMLIT, World Ocean Database, SeaDataNet;SOMLIT;Provided;Provided;Provided;Provided;-
-Samples (nb);115;374;327;154;289;272;1531
-Stations (nb);6;1;1;1;122;26;155
-Vertical profile max depth;100;3;3;3;4000;2000;-
-Different months;6;12;12;12;8;3;-
-Years;1;8;10;8;1;2;-
-Sequencing;454;Illumina MiSeq;Illumina MiSeq;Illumina MiSeq;Illumina MiSeq;Illumina MiSeq;-
-Clusters of reads;OTU;ASV;ASV;ASV;ASV;ASV;-
-Read clustering threshold;NA;NA;95 %;NA;95 %;80 %;-
-Applied read clustering threshold in this study;80 %;80 %;-;80 %;-;80 %;-
-Starting number of metabarcodes;423547;7933;59428;6400;59428;12279;569015
-Filtering step 1 (id > 80%, only protist sequences kept);239508;6239;29682;5554;59423;11322;351728
-Filtering step 2: taxonomic assignment specifications;PR2 v4.12.0, eval 0.01;PR2 v4.12.0, eval 0.01;PR2 v4.12.0, eval 0.01;PR2 v4.12.0, eval 0.01;PR2 v4.12.0, eval 0.01;PR2 v4.12.0, eval 0.01;PR2 v4.12.0, eval 0.01
-Multicellular lineages removed;Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae;Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae;Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae;Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae;Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae;Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae;Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae
-Filtering step 3 (sequence length > 200 bp);236618;6213;29073;5276;58555;11304;347039
-Filtering step 4 (contamination check with SILVA v138);236575;6087;28809;5218;55173;11303;343165
+,BioMarKs,ASTAN,BBMO,SOLA,Malaspina,MOOSE,Global dataset
+Provider,R Logares,M Caracciolo,R Logares,P Galand,R Logares,M Mendez-Sandin,-
+Abundance table,Provided,Provided,Provided,Provided,Provided,Provided,-
+Taxonomic affiliation,Provided,Provided,Provided,Provided,Provided,Provided,-
+DB version of starting taxonomy,NA,PR2 v4.12.0,PR2 v4.11.1,SILVA v128,PR2 v4.11.1,PR2 v4.12.0,-
+Metadata origin,"SOMLIT, World Ocean Database, SeaDataNet",SOMLIT,Provided,Provided,Provided,Provided,-
+Samples (nb),115,374,327,154,289,272,1531
+Stations (nb),6,1,1,1,122,26,155
+Vertical profile max depth,100,3,3,3,4000,2000,-
+Different months,6,12,12,12,8,3,-
+Years,1,8,10,8,1,2,-
+Sequencing,454,Illumina MiSeq,Illumina MiSeq,Illumina MiSeq,Illumina MiSeq,Illumina MiSeq,-
+Clusters of reads,OTU,ASV,ASV,ASV,ASV,ASV,-
+Read clustering threshold,NA,NA,95 %,NA,95 %,80 %,-
+Applied read clustering threshold in this study,80 %,80 %,-,80 %,-,80 %,-
+Starting number of metabarcodes,423547,7933,59428,6400,59428,12279,569015
+"Filtering step 1 (id > 80%, only protist sequences kept)",239508,6239,29682,5554,59423,11322,351728
+Filtering step 2: taxonomic assignment specifications,"PR2 v4.12.0, eval 0.01","PR2 v4.12.0, eval 0.01","PR2 v4.12.0, eval 0.01","PR2 v4.12.0, eval 0.01","PR2 v4.12.0, eval 0.01","PR2 v4.12.0, eval 0.01","PR2 v4.12.0, eval 0.01"
+Multicellular lineages removed,"Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae","Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae","Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae","Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae","Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae","Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae","Metazoa, Streptophyta, Florideophyceae, Bangiophyceae, Phaeophyceae, Ulvophyceae"
+Filtering step 3 (sequence length > 200 bp),236618,6213,29073,5276,58555,11304,347039
+Filtering step 4 (contamination check with SILVA v138),236575,6087,28809,5218,55173,11303,343165
