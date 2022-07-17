@@ -1,4 +1,4 @@
-# Beyond the limits of the unassigned protist microbiome: inferring large-scale spatiotemporal patterns of marine parasites at low taxonomic resolution
+# Beyond the limits of the unassigned protist microbiome: inferring large-scale spatiotemporal patterns of marine parasites
 
 Exploration of taxinomically unassigned protist genetic barcode sequences across different V4-18S datasets. 
 
