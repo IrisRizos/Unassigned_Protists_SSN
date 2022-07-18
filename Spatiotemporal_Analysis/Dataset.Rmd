@@ -1,0 +1,103 @@
+---
+title: "Heatmap_rhythmicity"
+author: "Thomas Finet"
+date: "12/07/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(readr)
+```
+
+## Import the data
+
+```{r}
+Rythmicity_ASTAN_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_ASTAN_final.csv")
+
+Rythmicity_BBMO_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_BBMO_final.csv")
+
+Rythmicity_SOLA_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_SOLA_final.csv")
+
+```
+
+## Data processing
+
+```{r}
+#Select the columns of interest
+ASTAN_dataset<-Rythmicity_ASTAN_final%>% filter(Periodicity==1)%>% select(CC_id,mean_abundance,"2009","2010","2011","2012","2013","2014","2015","2016")
+
+#Order the CC_id
+
+CC_id_order<-c("CC_unknown_12","CC_unknown_13" , "CC_unknown_20" , "CC_unknown_30" , "CC_unknown_35","CC_unknown_58","CC_unknown_62", "CC_unknown_80"  ,"CC_unknown_126","CC_unknown_134", "CC_unknown_154", "CC_unknown_168", "CC_unknown_172", "CC_unknown_183", "CC_unknown_227", "CC_unknown_257", "CC_unknown_272", "CC_unknown_370", "CC_unknown_462", "CC_unknown_483" ,"CC_unknown_498", "CC_unknown_530", "CC_unknown_532", "CC_unknown_535", "CC_unknown_547", "CC_unknown_550", "CC_unknown_553")
+
+#Order by CC_id
+ASTAN_dataset<-ASTAN_dataset %>% arrange(factor(CC_id, levels = CC_id_order))
+
+
+#Pivot the dataframe
+ASTAN_dataset<-ASTAN_dataset%>%pivot_longer(!CC_id & !mean_abundance, names_to="Year", values_to="Season")
+
+
+#Replace the 0 by Na
+ASTAN_dataset[ASTAN_dataset == 0] <- NA
+
+#Multiply by ten the relative abundances and round it  
+ASTAN_dataset$mean_abundance<-ASTAN_dataset$mean_abundance*10
+
+#round the relative abundances
+ASTAN_dataset$mean_abundance<-round(ASTAN_dataset$mean_abundance,2)
+
+#export the table
+write.csv(ASTAN_dataset,"ASTAN_dataset.csv")
+
+```
+
+```{r}
+BBMO_dataset<-Rythmicity_BBMO_final%>%filter(Periodicity==1)%>% select(CC_id,mean_abundance,"2004","2005","2006","2007","2008","2009","2010","2011","2012","2013")
+
+#Order by CC_id
+BBMO_dataset<-BBMO_dataset[order(BBMO_dataset$CC_id),]
+
+#Pivot the dataframe
+BBMO_dataset<-BBMO_dataset%>%pivot_longer(!CC_id & !mean_abundance, names_to="Year", values_to="Season")
+
+#Replace the 0 by Na
+BBMO_dataset[BBMO_dataset == 0] <- NA
+
+#Multiply by ten the relative abundances 
+BBMO_dataset$mean_abundance<-BBMO_dataset$mean_abundance*10
+
+#round the relative abundances
+BBMO_dataset$mean_abundance<-round(BBMO_dataset$mean_abundance,2)
+
+#export the table
+write.csv(BBMO_dataset,"BBMO_dataset.csv")
+
+```
+
+
+```{r}
+SOLA_dataset<-Rythmicity_SOLA_final%>%filter(Periodicity==1)%>% select(CC_id,mean_abundance,"2009","2010","2011","2012","2013","2014")
+
+#Order by CC_id
+SOLA_dataset<-SOLA_dataset[order(SOLA_dataset$CC_id),]
+
+#Pivot the dataframe
+SOLA_dataset<-SOLA_dataset%>%pivot_longer(!CC_id & !mean_abundance, names_to="Year", values_to="Season")
+
+#Replace the 0 by Na
+SOLA_dataset[SOLA_dataset == 0] <- NA
+
+#Multiply by ten the relative abundances 
+SOLA_dataset$mean_abundance<-SOLA_dataset$mean_abundance*10
+
+#round the relative abundances
+SOLA_dataset$mean_abundance<-round(SOLA_dataset$mean_abundance,2)
+
+#export the table
+write.csv(SOLA_dataset,"SOLA_dataset.csv")
+
+```
