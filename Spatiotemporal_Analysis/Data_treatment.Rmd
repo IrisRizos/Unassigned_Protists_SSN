@@ -138,7 +138,6 @@ temporality<-function(y){
 #Applying the 'TS_year' and 'temporality' function to a dataset of interest, and then we compute the number of seasons in wich each CC is present, for each year 
 
 temporality_year<-function(y){
-  y<-CC_abund_Synd_BBMO_clean
   #Compute the mean abundance per season for each CC
   y_clean_Season<- y %>% group_by(CC_id, Year,Season)%>% dplyr::summarize(abundance = mean(abundance, na.rm = TRUE))
   
