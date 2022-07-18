@@ -54,3 +54,6 @@ For BBMO time-series, the Rscript was run on the cluster via: Rythmicity_batch_C
 *Rhythmicity_CC_[TS name].csv --> Table_S2_rythmic.csv*
 *Rhythmicity_[TS name]_escouf.csv --> Table_S3_escoufier_rythmic.csv*
 
+* ### Step 5: Dataset.Rmd and Heatmap.py
+
+These scripts were used to do the final graphical representation of the above analysis: the first to extract the relevant data and second to plot it.
