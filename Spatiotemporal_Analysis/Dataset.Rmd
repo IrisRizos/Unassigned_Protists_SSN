@@ -1,0 +1,187 @@
+---
+title: "Heatmap_rhythmicity"
+author: "Thomas Finet"
+date: "12/07/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(readr)
+```
+
+## Import the data
+
+Rhythmicity
+```{r}
+Rhythmicity_ASTAN_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_ASTAN_final.csv")
+
+Rhythmicity_BBMO_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_BBMO_final.csv")
+
+Rhythmicity_SOLA_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_SOLA_final.csv")
+
+```
+
+Cleaned raw data and select the columns 'CC_id','Year','Month' and 'abundance'
+```{r}
+CC_abund_Synd_ASTAN_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/CC_abund_Synd_ASTAN_clean.csv")
+
+CC_abund_Synd_ASTAN_clean<-CC_abund_Synd_ASTAN_clean%>% select (CC_id,Year,Month, abundance)
+
+CC_abund_Synd_BBMO_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/CC_abund_Synd_BBMO_clean.csv")
+
+CC_abund_Synd_BBMO_clean<-CC_abund_Synd_BBMO_clean%>% select (CC_id,Year,Month, abundance)
+
+CC_abund_Synd_SOLA_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/CC_abund_Synd_SOLA_clean.csv")
+
+CC_abund_Synd_SOLA_clean<-CC_abund_Synd_SOLA_clean%>% select (CC_id,Year,Month, abundance)
+```
+
+## Data processing
+
+```{r}
+#Select the columns of interest
+ASTAN_dataset<-Rhythmicity_ASTAN_final%>% filter(Periodicity==1)%>% select(CC_id,mean_abundance,"2009","2010","2011","2012","2013","2014","2015","2016")
+
+
+#Pivot the dataframe
+ASTAN_dataset<-ASTAN_dataset%>%pivot_longer(!CC_id & !mean_abundance, names_to="Year", values_to="Season")
+
+
+#Replace the 0 by Na
+ASTAN_dataset[ASTAN_dataset == 0] <- NA
+
+##Compute the abundance value for each year, which is different from the abundance in the rhythmicity_[TS]_dataset, which is a mean computed on all the years selected for their number of seasonal presences
+
+#Select the selected CC by the escouffier criterion that are rhythmics in the raw data
+
+CC_abund_Synd_ASTAN_clean<-CC_abund_Synd_ASTAN_clean[which(CC_abund_Synd_ASTAN_clean$CC_id %in%ASTAN_dataset$CC_id),]
+
+#Compute the monthly-mean on the period selected for our dataset 
+mean_abundance_month_ASTAN<-CC_abund_Synd_ASTAN_clean%>% group_by(CC_id,Month,Year)%>% summarize(mean_abundance_month= mean(as.numeric(abundance)))
+#Compute the yearly-mean of the monthly-mean abundances
+mean_abundance_year_ASTAN<-mean_abundance_month_ASTAN%>% group_by(CC_id,Year)%>% summarize(mean_abundance_year= mean(as.numeric(mean_abundance_month)))
+
+
+
+##Order both dataframe
+
+#Order the CC_id
+
+CC_id_order<-c("CC_unknown_12","CC_unknown_13" , "CC_unknown_20" , "CC_unknown_30" , "CC_unknown_35","CC_unknown_58","CC_unknown_62", "CC_unknown_80"  ,"CC_unknown_126","CC_unknown_134", "CC_unknown_154", "CC_unknown_168", "CC_unknown_172", "CC_unknown_183", "CC_unknown_227", "CC_unknown_257", "CC_unknown_272", "CC_unknown_370", "CC_unknown_462", "CC_unknown_483" ,"CC_unknown_498", "CC_unknown_530", "CC_unknown_532", "CC_unknown_535", "CC_unknown_547", "CC_unknown_550", "CC_unknown_553")
+
+#Order by CC_id
+ASTAN_dataset<-ASTAN_dataset %>% arrange(factor(CC_id, levels = CC_id_order))
+mean_abundance_year_ASTAN<-mean_abundance_year_ASTAN %>% arrange(factor(CC_id, levels = CC_id_order))
+
+#Replace the 'mean_abundance' column in 'ASTAN_dataset' by the 'mean_abundance_year' column from the 'mean_abundance_year_ASTAN' dataframe
+ASTAN_dataset<-ASTAN_dataset%>% select(-mean_abundance)
+ASTAN_dataset$mean_abundance_year<-mean_abundance_year_ASTAN$mean_abundance_year
+
+
+#Multiply by ten the relative abundances and round it  
+ASTAN_dataset$mean_abundance_year<-ASTAN_dataset$mean_abundance_year*10
+
+#round the relative abundances
+ASTAN_dataset$mean_abundance_year<-round(ASTAN_dataset$mean_abundance_year,2)
+
+#export the table
+write.csv(ASTAN_dataset,"ASTAN_dataset.csv")
+
+```
+
+```{r}
+#Select the columns of interest 
+BBMO_dataset<-Rhythmicity_BBMO_final%>%filter(Periodicity==1)%>% select(CC_id,mean_abundance,"2004","2005","2006","2007","2008","2009","2010","2011","2012","2013")
+
+
+#Pivot the dataframe
+BBMO_dataset<-BBMO_dataset%>%pivot_longer(!CC_id & !mean_abundance, names_to="Year", values_to="Season")
+
+#Replace the 0 by Na
+BBMO_dataset[BBMO_dataset == 0] <- NA
+
+##Compute the abundance value for each year, which is different from the abundance in the rhythmicity_[TS]_dataset, which is a mean computed on all the years selected for their number of seasonal presences
+
+#Select the selected CC by the escouffier criterion that are rhythmics in the raw data
+
+CC_abund_Synd_BBMO_clean<-CC_abund_Synd_BBMO_clean[which(CC_abund_Synd_BBMO_clean$CC_id %in%BBMO_dataset$CC_id),]
+
+#Compute the monthly-mean on the period selected for our dataset 
+mean_abundance_month_BBMO<-CC_abund_Synd_BBMO_clean%>% group_by(CC_id,Month,Year)%>% summarize(mean_abundance_month= mean(as.numeric(abundance)))
+#Compute the yearly-mean of the monthly-mean abundances
+mean_abundance_year_BBMO<-mean_abundance_month_BBMO%>% group_by(CC_id,Year)%>% summarize(mean_abundance_year= mean(as.numeric(mean_abundance_month)))
+
+
+##Order both dataframe
+                                                                                         
+#Order by CC_id
+BBMO_dataset<-BBMO_dataset[order(BBMO_dataset$CC_id),]
+mean_abundance_year_BBMO<-mean_abundance_year_BBMO[order(mean_abundance_year_BBMO$CC_id),]
+
+#Replace the 'mean_abundance' column in 'BBMO_dataset' by the 'mean_abundance_year' column from the 'mean_abundance_year_BBMO' dataframe
+BBMO_dataset<-BBMO_dataset%>% select(-mean_abundance)
+BBMO_dataset$mean_abundance_year<-mean_abundance_year_BBMO$mean_abundance_year
+
+
+#Multiply by ten the relative abundances and round it  
+BBMO_dataset$mean_abundance_year<-BBMO_dataset$mean_abundance_year*10
+
+#round the relative abundances
+BBMO_dataset$mean_abundance_year<-round(BBMO_dataset$mean_abundance_year,2)
+
+#export the table
+write.csv(BBMO_dataset,"BBMO_dataset.csv")
+
+```
+
+
+```{r}
+#Select the column of interest
+SOLA_dataset<-Rhythmicity_SOLA_final%>%filter(Periodicity==1)%>% select(CC_id,mean_abundance,"2009","2010","2011","2012","2013","2014")
+
+#Order by CC_id
+SOLA_dataset<-SOLA_dataset[order(SOLA_dataset$CC_id),]
+
+#Pivot the dataframe
+SOLA_dataset<-SOLA_dataset%>%pivot_longer(!CC_id & !mean_abundance, names_to="Year", values_to="Season")
+
+#Replace the 0 by Na
+SOLA_dataset[SOLA_dataset == 0] <- NA
+
+
+##Compute the abundance value for each year, which is different from the abundance in the rhythmicity_[TS]_dataset, which is a mean computed on all the years selected for their number of seasonal presences
+
+#Select the selected CC by the escouffier criterion that are rhythmics in the raw data
+
+CC_abund_Synd_SOLA_clean<-CC_abund_Synd_SOLA_clean[which(CC_abund_Synd_SOLA_clean$CC_id %in%SOLA_dataset$CC_id),]
+
+#Compute the monthly-mean on the period selected for our dataset 
+mean_abundance_month_SOLA<-CC_abund_Synd_SOLA_clean%>% group_by(CC_id,Month,Year)%>% summarize(mean_abundance_month= mean(as.numeric(abundance)))
+#Compute the yearly-mean of the monthly-mean abundances
+mean_abundance_year_SOLA<-mean_abundance_month_SOLA%>% group_by(CC_id,Year)%>% summarize(mean_abundance_year= mean(as.numeric(mean_abundance_month)))
+
+
+##Order both dataframe
+                                                                                         
+#Order by CC_id
+SOLA_dataset<-SOLA_dataset[order(SOLA_dataset$CC_id),]
+mean_abundance_year_SOLA<-mean_abundance_year_SOLA[order(mean_abundance_year_SOLA$CC_id),]
+
+#Replace the 'mean_abundance' column in 'SOLA_dataset' by the 'mean_abundance_year' column from the 'mean_abundance_year_SOLA' dataframe
+SOLA_dataset<-SOLA_dataset%>% select(-mean_abundance)
+SOLA_dataset$mean_abundance_year<-mean_abundance_year_SOLA$mean_abundance_year
+
+
+#Multiply by ten the relative abundances and round it  
+SOLA_dataset$mean_abundance_year<-SOLA_dataset$mean_abundance_year*10
+
+#round the relative abundances
+SOLA_dataset$mean_abundance_year<-round(SOLA_dataset$mean_abundance_year,2)
+
+#export the table
+write.csv(SOLA_dataset,"SOLA_dataset.csv")
+
+```
