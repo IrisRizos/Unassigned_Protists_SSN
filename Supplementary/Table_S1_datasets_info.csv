@@ -6,7 +6,7 @@ DB version of starting taxonomy,NA,PR2 v4.12.0,PR2 v4.11.1,SILVA v128,PR2 v4.11.
 Metadata origin,"SOMLIT, World Ocean Database, SeaDataNet",SOMLIT,Provided,Provided,Provided,Provided,-
 Samples (nb),115,374,327,154,289,272,1531
 Stations (nb),6,1,1,1,122,26,155
-Vertical profile max depth,100,3,3,3,4000,2000,-
+Vertical profile max depth (m),100,3,3,3,4000,2000,-
 Different months,6,12,12,12,8,3,-
 Years,1,8,10,8,1,2,-
 Sequencing,454,Illumina MiSeq,Illumina MiSeq,Illumina MiSeq,Illumina MiSeq,Illumina MiSeq,-
