@@ -16,25 +16,25 @@ library(readr)
 
 Rhythmicity
 ```{r}
-Rhythmicity_ASTAN_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_ASTAN_final.csv")
+Rhythmicity_ASTAN_final <- read_csv("Rhythmicity_ASTAN_escouf.csv")
 
-Rhythmicity_BBMO_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_BBMO_final.csv")
+Rhythmicity_BBMO_final <- read_csv("Rhythmicity_BBMO_escouf")
 
-Rhythmicity_SOLA_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/Rythmicity_SOLA_final.csv")
+Rhythmicity_SOLA_final <- read_csv("Rhythmicity_BBMO_escouf")
 
 ```
 
 Cleaned raw data and select the columns 'CC_id','Year','Month' and 'abundance'
 ```{r}
-CC_abund_Synd_ASTAN_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/CC_abund_Synd_ASTAN_clean.csv")
+CC_abund_Synd_ASTAN_clean <- read_csv("CC_abund_Synd_ASTAN_clean.csv")
 
 CC_abund_Synd_ASTAN_clean<-CC_abund_Synd_ASTAN_clean%>% select (CC_id,Year,Month, abundance)
 
-CC_abund_Synd_BBMO_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/CC_abund_Synd_BBMO_clean.csv")
+CC_abund_Synd_BBMO_clean <- read_csv("CC_abund_Synd_BBMO_clean.csv")
 
 CC_abund_Synd_BBMO_clean<-CC_abund_Synd_BBMO_clean%>% select (CC_id,Year,Month, abundance)
 
-CC_abund_Synd_SOLA_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Heatmap/CC_abund_Synd_SOLA_clean.csv")
+CC_abund_Synd_SOLA_clean <- read_csv("CC_abund_Synd_SOLA_clean.csv")
 
 CC_abund_Synd_SOLA_clean<-CC_abund_Synd_SOLA_clean%>% select (CC_id,Year,Month, abundance)
 ```
