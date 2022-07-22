@@ -22,20 +22,20 @@ library (readr)
 Import the hellinger-transformed abundance matrix of Connected Components (CCs)
 
 ```{r}
-CC_abund_Synd_ASTAN_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_abund_Synd_ASTAN_clean.csv")
+CC_abund_Synd_ASTAN_clean <- read_csv("CC_abund_Synd_ASTAN_clean.csv")
 CC_abund_Synd_ASTAN_clean<-CC_abund_Synd_ASTAN_clean[,-1]
 
 ```
 
 Import the rythmic and escouffier-selected CC
 ```{r}
-Rhythmicity_ASTAN_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/Rhythmicity_ASTAN_final.csv")
+Rhythmicity_ASTAN_final <- read_csv("Rhythmicity_ASTAN_final.csv")
 Rhythmicity_ASTAN_final<-Rhythmicity_ASTAN_final[,-1]
 ```
 
 Import the treated data
 ```{r}
-CC_Synd_ASTAN_All <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_Synd_ASTAN_All.csv")
+CC_Synd_ASTAN_All <- read_csv("CC_Synd_ASTAN_All.csv")
 CC_Synd_ASTAN_All<-CC_Synd_ASTAN_All[,-1]
 ```
 
@@ -95,20 +95,20 @@ plot+theme_classic()+
 Import the hellinger-transformed abundance matrix of Connected Components (CCs)
 
 ```{r}
-CC_abund_Synd_BBMO_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_abund_Synd_BBMO_clean.csv")
+CC_abund_Synd_BBMO_clean <- read_csv("CC_abund_Synd_BBMO_clean.csv")
 CC_abund_Synd_BBMO_clean<-CC_abund_Synd_BBMO_clean[,-1]
 
 ```
 
 Import the rythmic and escouffier-selected CC
 ```{r}
-Rhythmicity_BBMO_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/Rhythmicity_BBMO_final.csv")
+Rhythmicity_BBMO_final <- read_csv("Rhythmicity_BBMO_final.csv")
 Rhythmicity_BBMO_final<-Rhythmicity_BBMO_final[,-1]
 ```
 
 Import the treated data
 ```{r}
-CC_Synd_BBMO_All <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_Synd_BBMO_All.csv")
+CC_Synd_BBMO_All <- read_csv("CC_Synd_BBMO_All.csv")
 CC_Synd_BBMO_All<-CC_Synd_BBMO_All[,-1]
 ```
 
@@ -163,20 +163,20 @@ plot+theme_classic()+
 Import the hellinger-transformed abundance matrix of Connected Components (CCs)
 
 ```{r}
-CC_abund_Synd_SOLA_clean <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_abund_Synd_SOLA_clean.csv")
+CC_abund_Synd_SOLA_clean <- read_csv("CC_abund_Synd_SOLA_clean.csv")
 CC_abund_Synd_SOLA_clean<-CC_abund_Synd_SOLA_clean[,-1]
 
 ```
 
 Import the rythmic and escouffier-selected CC
 ```{r}
-Rhythmicity_SOLA_final <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/Rhythmicity_SOLA_final.csv")
+Rhythmicity_SOLA_final <- read_csv("Rhythmicity_SOLA_final.csv")
 Rhythmicity_SOLA_final<-Rhythmicity_SOLA_final[,-1]
 ```
 
 Import the treated data
 ```{r}
-CC_Synd_SOLA_All <- read_csv("C:/Users/thoma/OneDrive/Bureau/Script Article Iris/Mat_Sup/CC_Synd_SOLA_All.csv")
+CC_Synd_SOLA_All <- read_csv("CC_Synd_SOLA_All.csv")
 CC_Synd_SOLA_All<-CC_Synd_SOLA_All[,-1]
 ```
 
