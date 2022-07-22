@@ -29,7 +29,7 @@ CC_abund_Synd_ASTAN_clean<-CC_abund_Synd_ASTAN_clean[,-1]
 
 Import the rythmic and escouffier-selected CC
 ```{r}
-Rhythmicity_ASTAN_final <- read_csv("Rhythmicity_ASTAN_final.csv")
+Rhythmicity_ASTAN_final <- read_csv("Rhythmicity_ASTAN_escouf.csv")
 Rhythmicity_ASTAN_final<-Rhythmicity_ASTAN_final[,-1]
 ```
 
@@ -102,7 +102,7 @@ CC_abund_Synd_BBMO_clean<-CC_abund_Synd_BBMO_clean[,-1]
 
 Import the rythmic and escouffier-selected CC
 ```{r}
-Rhythmicity_BBMO_final <- read_csv("Rhythmicity_BBMO_final.csv")
+Rhythmicity_BBMO_final <- read_csv("Rhythmicity_BBMO_escouf")
 Rhythmicity_BBMO_final<-Rhythmicity_BBMO_final[,-1]
 ```
 
@@ -170,7 +170,7 @@ CC_abund_Synd_SOLA_clean<-CC_abund_Synd_SOLA_clean[,-1]
 
 Import the rythmic and escouffier-selected CC
 ```{r}
-Rhythmicity_SOLA_final <- read_csv("Rhythmicity_SOLA_final.csv")
+Rhythmicity_SOLA_final <- read_csv("Rhythmicity_SOLA_escouf")
 Rhythmicity_SOLA_final<-Rhythmicity_SOLA_final[,-1]
 ```
 
