@@ -2,7 +2,9 @@
 ## Spatial analysis, files list:
 * ### Spatial_expl.Rmd : 
 All the steps required for the analyses are included in the Rmarkdown document.
+
 Input: /SSN/Split_Igraph_Synd_id100_cov80.z01-3
+
 Output: graphical representations and /Supplementary/Table_S5_jaccard.csv
 
 * ### Metadata_RDA.csv: 
