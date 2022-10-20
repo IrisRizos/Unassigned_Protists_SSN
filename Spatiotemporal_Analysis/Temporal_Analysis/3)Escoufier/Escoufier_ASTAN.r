@@ -2,7 +2,7 @@
 #CC/ASTAN: Escouffier's equivalent vectors ASTAN 
 
 #Set the working directory 
-setwd("/shared/projects/formaldark/testThomas/ASTAN/CC_Synd/CC_final")
+setwd("path")
 
 #library
 library(readr)
