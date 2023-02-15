@@ -57,17 +57,18 @@ awk '!x[$1]++' FS="\t" Dataset.blast.out > Dataset_blast_top_hit
 awk -F "\t" '/^ASV/ {gsub("\t",";") ; print$0}' Dataset_blast_top_hit > Dataset_blast_top_hit.csv
 ```
 
+Headers were added to names and top hit files:
+```
+sed -i '1iASV;GenBank_id|rRNA|nucleus|Kingdom|Supergroup|Division|Class|Order|Family|Genus|Species' Dataset_blast_top_hit.csv
+sed -i '1iASV' ASV_names.csv
+```
+
 ASV names were merged with their blast best hit with the script: merge_table.py
 Via the command:
 ```
 sbatch launch_short_working_script.sh merge_table.py -f1 ASV_names.csv -f2 Dataset_blast_top_hit.csv -cn ASV
 ```
 
-Headers were added to names and top hit files before hand:
-```
-sed -i '1iASV;GenBank_id|rRNA|nucleus|Kingdom|Supergroup|Division|Class|Order|Family|Genus|Species' Dataset_blast_top_hit.csv
-sed -i '1iASV' ASV_names.csv
-```
 
 ## Step 3:
 * Removal of sequences with length < 200 bp:
