@@ -2,7 +2,6 @@
 
 Below are listed the steps followed to unite the 6 metabarcoding datasets. 
 
-++ unmatched ASV during PR2 assignment were added again in final ASV table with the program: merge_table.py
 ```
 sbatch launch_short_working_script.sh merge_table.py -f1 <ASV_names> -f2 <Blast_top_hit.csv> -cn ASV
 ```
@@ -64,7 +63,6 @@ sed -i '1iASV' ASV_names.csv
 ```
 
 ASV names were merged with their blast best hit with the script: merge_table.py
-Via the command:
 ```
 sbatch launch_short_working_script.sh merge_table.py -f1 ASV_names.csv -f2 Dataset_blast_top_hit.csv -cn ASV
 ```
@@ -91,7 +89,7 @@ awk '/^>/ {printf("%s%s\t",(N>0?"\n":""),$0);N++;next;} {printf("%s",$0);} END {
 
 * ASVs that did not match with any reference in the PR2 or SILVA databases and were removed from the output were added again:
 ```
-
+sbatch launch_short_working_script.sh merge_table.py -f1 <ASV_names> -f2 <ASV_filt_PR2_f200_EK.csv> -cn ASV
 ```
 
 The assignment and occurence (dataset and depth) of these sequences was studied (cf. Normalisation_Alpha_div_Abund.Rmd).
