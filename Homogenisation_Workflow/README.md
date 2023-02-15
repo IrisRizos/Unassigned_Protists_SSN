@@ -94,4 +94,4 @@ The assignment and occurence (dataset and depth) of these sequences was studied 
 ## Output
 The homogenised global metabarcoding dataset resulting from the workflow (ASV_18SV4_MetaB.csv) was explored in the script Normalisation_Alpha_div_Abund.Rmd which includes the normalisation of datasets and quantification of unassigned sequences across datasets and taxonomy.
 
-#### All scripts and analysis were performed on ABiMS cluster of Roscoff Marine station (http://abims.sb-roscoff.fr).
+#### All scripts and analysis were performed on ABiMs cluster of Roscoff Marine station (http://abims.sb-roscoff.fr).
