@@ -86,10 +86,11 @@ Sequences to be assigned were selected and linearised:
 awk -F ";" '/^ASV_/ && $2=="Unknown" {print">"$1"\n"$11}' ASV_filt_PR2_f200.csv > ASV_NA_Kingdom.fa
 awk '/^>/ {printf("%s%s\t",(N>0?"\n":""),$0);N++;next;} {printf("%s",$0);} END {printf("\n");}' ASV_NA_Kingdom.fa > ASV_NA_Kingdom_lin.fa
 ```
+The taxonomy was updated with the SILVA output.
 
 * ASVs that did not match with any reference in the PR2 or SILVA databases and were removed from the output were added again:
 ```
-sbatch launch_short_working_script.sh merge_table.py -f1 <ASV_names> -f2 <ASV_filt_PR2_f200_EK.csv> -cn ASV
+sbatch launch_short_working_script.sh merge_table.py -f1 <ASV_names> -f2 <ASV_filt_PR2_f200_silva.csv> -cn ASV
 ```
 
 The assignment and occurence (dataset and depth) of these sequences was studied (cf. Normalisation_Alpha_div_Abund.Rmd).
