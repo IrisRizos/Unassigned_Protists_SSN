@@ -2,9 +2,6 @@
 
 Below are listed the steps followed to unite the 6 metabarcoding datasets. 
 
-```
-sbatch launch_short_working_script.sh merge_table.py -f1 <ASV_names> -f2 <Blast_top_hit.csv> -cn ASV
-```
 
 ## Step 1:
 * Removal of sequences with clustering similarity id < 80%:
