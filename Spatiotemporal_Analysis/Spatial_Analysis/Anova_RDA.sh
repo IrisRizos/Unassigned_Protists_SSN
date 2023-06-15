@@ -15,8 +15,5 @@ module load r/4.1.1
 
 R CMD BATCH Rscript_Anova_RDA.R
 
-# Run by Iris on 17.01.2021
-# Run by Iris on 7.07.2022
-
 
 
