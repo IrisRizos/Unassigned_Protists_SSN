@@ -1,0 +1,2434 @@
+---
+title: "Spatial exploration of unassigned Syndiniales clusters"
+author: "Iris Rizos"
+date: "17/03/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# setwd("/shared/projects/formaldark/R_igraph/Final_files/")
+
+# Import packages
+library(igraph)
+library(rlist)
+library(plyr)
+library(ggplot2)
+library(scales)
+library(RColorBrewer)
+library(gridExtra)
+library(stringr)
+library(reshape)
+library(vegan)
+library(data.table)
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(scales)
+library(gplots)
+library(rcartocolor)
+library(grid)
+library(UpSetR)
+```
+
+## 1. Load Sequence Similarity Network
+
+A subnetwork of Syndiniales clusters with no taxonomic assignment at the genus level is created.
+
+```{r}
+# Load the graph 
+g2 <- readRDS("Igraph_100_cov80_noIso.RDS")
+
+summary(g2)
+
+# Decompose graph in CC
+dg <- decompose(g2, mode = c("strong"), max.comps = NA,
+                min.vertices = 6)
+
+# Select CCs of Class Syndiniales 
+dg_synd <- list()
+for (i in dg) {
+  t <- table(V(i)$Class)
+  t <- data.frame(table(V(i)$Class))
+  if (t[1,1] == "Syndiniales" && nrow(t)==1) {
+    dg_synd <- list.append(dg_synd,i)
+  }
+}
+
+# Calculate the % of network represented by Syndiniales
+(length(dg_synd)/length(dg))*100
+
+# Select CCs 100% unknown at Genus 
+dg_synd_uk <- list()
+for (i in dg_synd) {
+  t <- table(V(i)$Genus_status)
+  t <- data.frame(table(V(i)$Genus_status))
+  if (t[1,1] == "Unknown" && nrow(t)==1) {
+    dg_synd_uk <- list.append(dg_synd_uk,i)
+  }
+}
+
+# Calculate the % of Syndiniales network represented by unassigned Syndiniales
+(length(dg_synd_uk)/length(dg_synd))*100
+```
+
+## 2. Gather info about Connected Component (CC) geographic distribution and taxonomy
+
+Two functions are used, one to calculate the occurrence of CCs across the studied marine regions and one to gather the taxonomy of clusters at the Order rank. The functions are applied to the subnetwork of unknown Syndiniales clusters at the genus level.
+
+```{r}
+# Get table with nb of CCs shared between locations
+###################################################
+###*********************************************###
+## For all CC of a graph ##
+shared.loc <- function(CC) {
+  # Sea attributes of CCs
+  locations <- V(CC)$Sea
+  
+  # Sequences of each sea attribute
+  location_abund <- table(locations)
+  
+  # Nb of sea attributes
+  N <- length(location_abund)
+  
+  # Sum of sequences for each CC
+  S <- sum(location_abund)
+  
+  # Locations shared
+  locations <- data.frame((location_abund/S)*100)
+  locations <- locations[order(-locations$Freq), ]
+  
+  if (N==6) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- locations[3,1] ;
+    Location4 <- locations[4,1] ;
+    Location5 <- locations[5,1] ;
+    Location6 <- locations[6,1] ;
+  }
+  else if (N==5) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- locations[3,1] ;
+    Location4 <- locations[4,1] ;
+    Location5 <- locations[5,1] ;
+    Location6 <- "NA" ;
+  }
+  else if (N==4) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- locations[3,1] ;
+    Location4 <- locations[4,1] ;
+    Location5 <- "NA" ;
+    Location6 <- "NA" ;
+  }
+  else if (N==3) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- locations[3,1] ;
+    Location4 <- "NA" ;
+    Location5 <- "NA" ;
+    Location6 <- "NA" ;
+  }
+  else if (N==2) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- "NA" ;
+    Location4 <- "NA" ;
+    Location5 <- "NA" ;
+    Location6 <- "NA" ;
+  }
+  else {
+    Location1 <- locations[1,1] ;
+    Location2 <- "NA" ;
+    Location3 <- "NA" ;
+    Location4 <- "NA" ;
+    Location5 <- "NA" ;
+    Location6 <- "NA" ;
+  }
+  
+  # Data frame
+  df <- data.frame(N, S, Location1, Location2, Location3, Location4, Location5, Location6)
+  return(df) 
+}
+###*************************************************###
+#######################################################
+d=lapply(dg_synd_uk,shared.loc)
+
+# Number of unknown Syndiniales CCs at Genus level
+UK_CC<-length(d)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_synd_uk), SIMPLIFY=F)
+
+# Create data frame
+df <- ldply(newlist, data.frame)
+df$N <- as.factor(df$N)
+df$CC_id <- as.factor(df$CC_id)
+summary(df)
+
+# CCs shared between 6 marine regions
+df_6 <- df[df$N == 6, ]
+UK_6<-(nrow(df_6)/nrow(df))*100
+
+# CCs shared between 5 marine regions
+df_5 <- df[df$N == 5, ]
+UK_5<-(nrow(df_5)/nrow(df))*100
+
+# CCs shared between 4 marine regions
+df_4 <- df[df$N == 4, ]
+UK_4<-(nrow(df_4)/nrow(df))*100
+
+# CCs shared between 3 marine regions
+df_3 <- df[df$N == 3, ]
+UK_3<-(nrow(df_3)/nrow(df))*100
+
+# CCs shared between 2 marine regions
+df_2 <- df[df$N == 2, ]
+UK_2<-(nrow(df_2)/nrow(df))*100
+
+# CCs shared found in only 1 marine region
+df_1 <- df[df$N == 1, ]
+UK_1<-(nrow(df_1)/nrow(df))*100
+#####################
+
+# Get table with orders of unknown Syndiniales 
+######### CC taxonomic info table #########
+# Function for order taxonomic status and division group of each CC
+#######################################################
+###*************************************************###
+## For all CC of a graph ##
+taxo.info <- function(CC) {
+  Tax <- c()
+  # Get taxo info
+  ord <- V(CC)$Order
+  taxonomy <- table(ord)
+  taxonomy <- data.frame(taxonomy)
+  
+  # Create data frame and split genus status and division into 2 columns
+  taxonomy <- subset(taxonomy, select = -c(Freq))
+  names(taxonomy)[1] <- "Order"
+  taxonomy <- taxonomy[1,]
+  Tax <- c(Tax,paste(taxonomy))
+  
+  return(Tax) 
+}
+###*************************************************###
+#######################################################
+d = lapply(dg_synd_uk,taxo.info)
+
+# Assign id to each CC of graph 
+newlist2 <- mapply(cbind, d, "CC_id"=1:length(dg_synd_uk), SIMPLIFY=F)
+
+# Create data frame
+df_taxo <- ldply(newlist2, data.frame)
+summary(df_taxo)
+
+# Set type of variables
+df_taxo$CC_id <- as.character(paste(df_taxo$CC_id))
+names(df_taxo)[names(df_taxo)=="V1"] <- "Order"
+
+# Merge with location info
+data <- cbind(df, df_taxo)
+summary(data)
+
+# Distribution of Dino groups
+df_I <- data[data$Order=="Dino-Group-I",]
+CC_I <- nrow(df_I)
+df_II <- data[data$Order=="Dino-Group-II",]
+CC_II <- nrow(df_II)
+df_III <- data[data$Order=="Dino-Group-III",]
+CC_III <- nrow(df_III)
+df_V <- data[data$Order=="Dino-Group-V",]
+CC_V <- nrow(df_V)
+df_uk <- data[data$Order=="Unknown",]
+CC_uk <- nrow(df_uk)
+
+## Calculate distribution range of unknown clusters for each Syndiniales order
+# CCs shared between 6 marine regions
+df_I_6 <- df_I[df_I$N == 6, ]
+UK_6_I<-(nrow(df_I_6)/nrow(df_I))*100
+
+df_II_6 <- df_II[df_II$N == 6, ]
+UK_6_II<-(nrow(df_II_6)/nrow(df_II))*100
+
+df_III_6 <- df_III[df_III$N == 6, ]
+UK_6_III<-(nrow(df_III_6)/nrow(df_III))*100
+
+df_V_6 <- df_V[df_V$N == 6, ]
+UK_6_V<-(nrow(df_V_6)/nrow(df_V))*100
+
+df_uk_6 <- df_uk[df_uk$N == 6, ]
+UK_6_uk<-(nrow(df_uk_6)/nrow(df_uk))*100
+
+# CCs shared between 5 marine regions
+df_I_5 <- df_I[df_I$N == 5, ]
+UK_5_I<-(nrow(df_I_5)/nrow(df_I))*100
+
+df_II_5 <- df_II[df_II$N == 5, ]
+UK_5_II<-(nrow(df_II_5)/nrow(df_II))*100
+
+df_III_5 <- df_III[df_III$N == 5, ]
+UK_5_III<-(nrow(df_III_5)/nrow(df_III))*100
+
+df_V_5 <- df_V[df_V$N == 5, ]
+UK_5_V<-(nrow(df_V_5)/nrow(df_V))*100
+
+df_uk_5 <- df_uk[df_uk$N == 5, ]
+UK_5_uk<-(nrow(df_uk_5)/nrow(df_uk))*100
+
+# CCs shared between 4 marine regions
+df_I_4 <- df_I[df_I$N == 4, ]
+UK_4_I<-(nrow(df_I_4)/nrow(df_I))*100
+
+df_II_4 <- df_II[df_II$N == 4, ]
+UK_4_II<-(nrow(df_II_4)/nrow(df_II))*100
+
+df_III_4 <- df_III[df_III$N == 4, ]
+UK_4_III<-(nrow(df_III_4)/nrow(df_III))*100
+
+df_V_4 <- df_V[df_V$N == 4, ]
+UK_4_V<-(nrow(df_V_4)/nrow(df_V))*100
+
+df_uk_4 <- df_uk[df_uk$N == 4, ]
+UK_4_uk<-(nrow(df_uk_4)/nrow(df_uk))*100
+
+# CCs shared between 3 marine regions
+df_I_3 <- df_I[df_I$N == 3, ]
+UK_3_I<-(nrow(df_I_3)/nrow(df_I))*100
+
+df_II_3 <- df_II[df_II$N == 3, ]
+UK_3_II<-(nrow(df_II_3)/nrow(df_II))*100
+
+df_III_3 <- df_III[df_III$N == 3, ]
+UK_3_III<-(nrow(df_III_3)/nrow(df_III))*100
+
+df_V_3 <- df_V[df_V$N == 3, ]
+UK_3_V<-(nrow(df_V_3)/nrow(df_V))*100
+
+df_uk_3 <- df_uk[df_uk$N == 3, ]
+UK_3_uk<-(nrow(df_uk_3)/nrow(df_uk))*100
+
+# CCs shared between 2 marine regions
+df_I_2 <- df_I[df_I$N == 2, ]
+UK_2_I<-(nrow(df_I_2)/nrow(df_I))*100
+
+df_II_2 <- df_II[df_II$N == 2, ]
+UK_2_II<-(nrow(df_II_2)/nrow(df_II))*100
+
+df_III_2 <- df_III[df_III$N == 2, ]
+UK_2_III<-(nrow(df_III_2)/nrow(df_III))*100
+
+df_V_2 <- df_V[df_V$N == 2, ]
+UK_2_V<-(nrow(df_V_2)/nrow(df_V))*100
+
+df_uk_2 <- df_uk[df_uk$N == 2, ]
+UK_2_uk<-(nrow(df_uk_2)/nrow(df_uk))*100
+
+# CCs shared found in only 1 marine region
+df_I_1 <- df_I[df_I$N == 1, ]
+UK_1_I<-(nrow(df_I_1)/nrow(df_I))*100
+
+df_II_1 <- df_II[df_II$N == 1, ]
+UK_1_II<-(nrow(df_II_1)/nrow(df_II))*100
+
+df_III_1 <- df_III[df_III$N == 1, ]
+UK_1_III<-(nrow(df_III_1)/nrow(df_III))*100
+
+df_V_1 <- df_V[df_V$N == 1, ]
+UK_1_V<-(nrow(df_V_1)/nrow(df_V))*100
+
+df_uk_1 <- df_uk[df_uk$N == 1, ]
+UK_1_uk<-(nrow(df_uk_1)/nrow(df_uk))*100
+```
+
+## Number of unknown Syndiniales clusters within each Order
+
+Figure S7
+
+```{r}
+## Supplementary Figure: number of Syndiniales unknown genus clusters within each Order
+# Create data-frame
+tax_status <- c("Dino-Group-I","Dino-Group-II","Dino-Group-III","Dino-Group-V","Unknown")
+CC_nb <- c(CC_I,CC_II,CC_III,CC_V,CC_uk)
+df <- data.frame(tax_status, CC_nb)
+
+# Choose color palette
+# display.brewer.all()
+
+# Plot
+ggplot(df, aes(y=CC_nb, x=tax_status,fill=tax_status)) + 
+  geom_bar(stat="identity", colour="black") +
+  scale_fill_brewer(palette="Dark2") +
+  theme_classic() +
+  theme(axis.ticks.x=element_blank(), axis.title.x=element_blank(), axis.text.x=element_text(face="bold")) +
+  ylab("Number of CCs") +
+  labs(fill='Syndiniales Order') +
+  theme(legend.title = element_text(face="bold")) +
+  geom_text(aes(label=CC_nb), position=position_dodge(width=0.9), vjust=-0.25)
+```
+
+## 3. Distribution range of unknown Syndiniales clusters of each Order (Figure 2) 
+
+The Figure 2 is composed of 4 following plots that were assembled and colored with Inkscape.
+
+## Dino-Group-I
+
+```{r}
+# Count occurrences of group I
+data1 <- data[data$Order=="Dino-Group-I",]
+
+d1 <- data.frame(table(data1$Location1,data1$Location2,data1$Location3,data1$Location4,data1$Location5,data1$Location6))
+
+# Sum should be 2954 CC
+sum(d1$Freq)
+
+d1_no0 <- d1[d1$Freq!=0,]
+d1_no0_detail <- data.frame(paste('`',d1_no0$Var1,'&',d1_no0$Var2,'&',
+                                  d1_no0$Var3,'&',d1_no0$Var4,'&',d1_no0$Var5,
+                                  '&',d1_no0$Var6,'`','=',d1_no0$Freq,',',sep=""))
+
+# Set data
+expressionInput <- c(
+  `English Channel&North Sea&Mediterranean Sea&Black Sea&Subtropical ocean&Bay of Biscay`=1,
+  `North Sea&Black Sea&Mediterranean Sea&English Channel&Subtropical ocean&Bay of Biscay`=1,
+  `English Channel&Mediterranean Sea&Subtropical ocean&North Sea&Bay of Biscay&Black Sea`=1,
+  `Mediterranean Sea&Subtropical ocean&North Sea&English Channel&Bay of Biscay`=1,
+  `English Channel&Mediterranean Sea&Subtropical ocean&North Sea&Bay of Biscay`=1,
+  `English Channel&Mediterranean Sea&Subtropical ocean&North Sea&Black Sea`=1,
+  `Mediterranean Sea&Subtropical ocean&Black Sea&North Sea&English Channel`=1,
+  `Mediterranean Sea&Subtropical ocean&English Channel&Bay of Biscay`=4,
+  `North Sea&Black Sea&Mediterranean Sea&Bay of Biscay`=1,
+  `Black Sea&North Sea&Mediterranean Sea&Bay of Biscay`=1,
+  `Mediterranean Sea&Black Sea&North Sea&Bay of Biscay`=2,
+  `English Channel&Mediterranean Sea&Subtropical ocean&Bay of Biscay`=1,
+  `Subtropical ocean&Mediterranean Sea&Bay of Biscay&Black Sea`=1,
+  `North Sea&Mediterranean Sea&Bay of Biscay&Black Sea`=3,
+  `English Channel&Mediterranean Sea&North Sea&Black Sea`=1,
+  `Subtropical ocean&Mediterranean Sea&Bay of Biscay&English Channel`=3,
+  `Mediterranean Sea&Subtropical ocean&Bay of Biscay&English Channel`=2,
+  `Mediterranean Sea&Subtropical ocean&North Sea&English Channel`=1,
+  `North Sea&Black Sea&Bay of Biscay&Mediterranean Sea`=1,
+  `Black Sea&North Sea&Bay of Biscay&Mediterranean Sea`=1,
+  `North Sea&Black Sea&English Channel&Mediterranean Sea`=1,
+  `Mediterranean Sea&Black Sea&Bay of Biscay`=2,
+  `North Sea&Black Sea&Bay of Biscay`=2,
+  `Subtropical ocean&Mediterranean Sea&Bay of Biscay`=3,
+  `Black Sea&Mediterranean Sea&Bay of Biscay`=1,
+  `Mediterranean Sea&Subtropical ocean&Bay of Biscay`=7,
+  `Mediterranean Sea&Bay of Biscay&Black Sea`=1,
+  `North Sea&Mediterranean Sea&Black Sea`=1,
+  `English Channel&North Sea&Black Sea`=1,
+  `Mediterranean Sea&North Sea&Black Sea`=2,
+  `English Channel&Subtropical ocean&Black Sea`=1,
+  `Mediterranean Sea&Subtropical ocean&Black Sea`=2,
+  `North Sea&Black Sea&English Channel`=3,
+  `Subtropical ocean&Mediterranean Sea&English Channel`=8,
+  `North Sea&Mediterranean Sea&English Channel`=1,
+  `Mediterranean Sea&Subtropical ocean&English Channel`=16,
+  `North Sea&Black Sea&Mediterranean Sea`=7,
+  `Subtropical ocean&English Channel&Mediterranean Sea`=8,
+  `Black Sea&English Channel&Mediterranean Sea`=4,
+  `North Sea&English Channel&Mediterranean Sea`=1,
+  `Black Sea&North Sea&Mediterranean Sea`=8,
+  `English Channel&Subtropical ocean&Mediterranean Sea`=3,
+  `Mediterranean Sea&Bay of Biscay`=11,
+  `English Channel&Black Sea`=1,
+  `Mediterranean Sea&Black Sea`=2,
+  `North Sea&Black Sea`=24,
+  `Subtropical ocean&English Channel`=8,
+  `Mediterranean Sea&English Channel`=6,
+  `North Sea&English Channel`=2,
+  `English Channel&Mediterranean Sea`=3,
+  `Subtropical ocean&Mediterranean Sea`=302,
+  `Black Sea&Mediterranean Sea`=5,
+  `North Sea&Mediterranean Sea`=8,
+  `Subtropical ocean`=172,
+  `Bay of Biscay`=2,
+  `Black Sea`=3,
+  `Mediterranean Sea`=34,
+  `North Sea`=6,
+  `English Channel&North Sea`=1,
+  `Black Sea&North Sea`=47,
+  `Mediterranean Sea&North Sea`=18,
+  `English Channel&Subtropical ocean`=2,
+  `Mediterranean Sea&Subtropical ocean`=227,
+  `North Sea&Subtropical ocean`=1,
+  `Black Sea&Bay of Biscay&North Sea`=1,
+  `Mediterranean Sea&English Channel&North Sea`=1,
+  `English Channel&Mediterranean Sea&North Sea`=1,
+  `Subtropical ocean&Mediterranean Sea&North Sea`=1,
+  `Black Sea&Mediterranean Sea&North Sea`=13,
+  `English Channel&Subtropical ocean&North Sea`=1,
+  `Black Sea&Subtropical ocean&North Sea`=1,
+  `Mediterranean Sea&Subtropical ocean&North Sea`=6,
+  `Mediterranean Sea&English Channel&Subtropical ocean`=7,
+  `English Channel&Mediterranean Sea&Subtropical ocean`=9,
+  `Black Sea&Mediterranean Sea&Subtropical ocean`=1,
+  `Mediterranean Sea&North Sea&Subtropical ocean`=1,
+  `Mediterranean Sea&Subtropical ocean&English Channel&North Sea`=4,
+  `Mediterranean Sea&English Channel&Subtropical ocean&North Sea`=2,
+  `English Channel&Mediterranean Sea&Subtropical ocean&North Sea`=2,
+  `Mediterranean Sea&English Channel&Bay of Biscay&Subtropical ocean`=1,
+  `Mediterranean Sea&Subtropical ocean&English Channel&Bay of Biscay&North Sea`=2,
+  `Mediterranean Sea&English Channel&Subtropical ocean&Bay of Biscay&North Sea`=1,
+  `Mediterranean Sea&Subtropical ocean&Bay of Biscay&English Channel&North Sea`=1,
+  `Mediterranean Sea&English Channel&Subtropical ocean&Black Sea&Bay of Biscay&North Sea`=1,
+  `Mediterranean Sea&Subtropical ocean&Black Sea&English Channel&Bay of Biscay&North Sea`=2)                     
+
+# Plot
+upset(fromExpression(expressionInput), order.by = "freq",
+      nsets = 6,
+      nintersects = 85, 
+      text.scale = 1.1, 
+      point.size = 2.8, 
+      line.size = 1,
+      mainbar.y.label = "Shared Syndiniales CCs (nb)", 
+      sets.x.label = "Occurrence of Syndiniales CCs (nb)")
+
+grid.text("Dino-Group-I", x = 0.65, y = 0.95,
+          gp = gpar(fontsize = 18))
+```
+
+## Dino-Group-II
+
+```{r}
+# Count occurrences of group II
+data2 <- data[data$Order=="Dino-Group-II",]
+
+d2 <- data.frame(table(data2$Location1,data2$Location2,data2$Location3,data2$Location4,data2$Location5,data2$Location6))
+
+# Sum should be 2954 CC
+sum(d2$Freq)
+
+d2_no0 <- d2[d2$Freq!=0,]
+d2_no0_detail <- data.frame(paste('`',d2_no0$Var1,'&',d2_no0$Var2,'&',
+                              d2_no0$Var3,'&',d2_no0$Var4,'&',d2_no0$Var5,
+                              '&',d2_no0$Var6,'`','=',d2_no0$Freq,',',sep=""))
+
+# Set data
+expressionInput <- c(
+                     `Mediterranean Sea&Subtropical ocean&North Sea&English Channel&Black Sea&Bay of Biscay`= 1,
+                     `Subtropical ocean&English Channel&North Sea&Mediterranean Sea&Black Sea&Bay of Biscay`=1,
+                     `Subtropical ocean&English Channel&Mediterranean Sea&North Sea&Black Sea&Bay of Biscay`=1,
+                     `Subtropical ocean&Mediterranean Sea&English Channel&Black Sea&North Sea&Bay of Biscay`=2,
+                     `Mediterranean Sea&Subtropical ocean&Black Sea&English Channel&North Sea&Bay of Biscay`=2,
+                     `Black Sea&North Sea&Mediterranean Sea&English Channel&Subtropical ocean&Bay of Biscay`=1,
+                     `English Channel&Subtropical ocean&Mediterranean Sea&North Sea&Bay of Biscay&Black Sea`=1,
+                     `Subtropical ocean&Mediterranean Sea&North Sea&Black Sea&Bay of Biscay`=1,
+                     `Subtropical ocean&Mediterranean Sea&Black Sea&English Channel&Bay of Biscay`=2,
+                     `Mediterranean Sea&Subtropical ocean&North Sea&English Channel&Bay of Biscay`=1,
+                     `Subtropical ocean&Mediterranean Sea&English Channel&North Sea&Bay of Biscay`=3,
+                     `Mediterranean Sea&Subtropical ocean&English Channel&North Sea&Bay of Biscay`=2,
+                     `Subtropical ocean&English Channel&Mediterranean Sea&North Sea&Bay of Biscay`=1,
+                     `Mediterranean Sea&English Channel&Subtropical ocean&North Sea&Bay of Biscay`=1,
+                     `English Channel&Mediterranean Sea&Subtropical ocean&North Sea&Bay of Biscay`=4,
+                     `Subtropical ocean&Mediterranean Sea&English Channel&North Sea&Black Sea`=1,
+                     `Mediterranean Sea&Subtropical ocean&English Channel&North Sea&Black Sea`=2,
+                     `English Channel&Mediterranean Sea&Subtropical ocean&North Sea&Black Sea`=3,
+                     `Mediterranean Sea&English Channel&North Sea&Subtropical ocean&Black Sea`=2,
+                     `Subtropical ocean&North Sea&Mediterranean Sea&Black Sea&English Channel`=1,
+                     `Subtropical ocean&Mediterranean Sea&Black Sea&North Sea&English Channel`=1,
+                     `North Sea&Black Sea&Mediterranean Sea&Subtropical ocean&English Channel`=1,
+                     `Subtropical ocean&Mediterranean Sea&English Channel&Bay of Biscay`=14,
+                     `Mediterranean Sea&Subtropical ocean&English Channel&Bay of Biscay`=6,
+                     `Subtropical ocean&English Channel&Mediterranean Sea&Bay of Biscay`=2,
+                     `English Channel&Subtropical ocean&Mediterranean Sea&Bay of Biscay`=4,
+                     `Black Sea&Subtropical ocean&Mediterranean Sea&Bay of Biscay`=1,
+                     `Subtropical ocean&Mediterranean Sea&North Sea&Bay of Biscay`=4,
+                     `Mediterranean Sea&Subtropical ocean&North Sea&Bay of Biscay`=1,
+                     `Mediterranean Sea&English Channel&Subtropical ocean&Bay of Biscay`=7,
+                     `English Channel&Mediterranean Sea&Subtropical ocean&Bay of Biscay`=2,
+                     `Black Sea&Mediterranean Sea&Subtropical ocean&Bay of Biscay`=1,
+                     `Subtropical ocean&Mediterranean Sea&Bay of Biscay&Black Sea`=1,
+                     `Mediterranean Sea&Subtropical ocean&Bay of Biscay&Black Sea`=1,
+                     `Subtropical ocean&English Channel&Mediterranean Sea&Black Sea`=1,
+                     `North Sea&Subtropical ocean&Mediterranean Sea&Black Sea`=1,
+                     `Mediterranean Sea&English Channel&North Sea&Black Sea`=3,
+                     `English Channel&Mediterranean Sea&Subtropical ocean&Black Sea`=1,
+                     `Subtropical ocean&Mediterranean Sea&Bay of Biscay&English Channel`=4,
+                     `Mediterranean Sea&North Sea&Bay of Biscay&English Channel`=1,
+                     `Mediterranean Sea&Subtropical ocean&Bay of Biscay&English Channel`=5,
+                     `Subtropical ocean&Mediterranean Sea&Black Sea&English Channel`=1,
+                     `North Sea&Mediterranean Sea&Black Sea&English Channel`=1,
+                     `Black Sea&Subtropical ocean&Mediterranean Sea&English Channel`=1,
+                     `Mediterranean Sea&Black Sea&North Sea&English Channel`=1,
+                     `Subtropical ocean&Mediterranean Sea&North Sea&English Channel`=7,
+                     `Black Sea&Mediterranean Sea&North Sea&English Channel`=1,
+                     `Mediterranean Sea&Subtropical ocean&North Sea&English Channel`=5,
+                     `Mediterranean Sea&Black Sea&Subtropical ocean&English Channel`=1,
+                     `Subtropical ocean&English Channel&Bay of Biscay&Mediterranean Sea`=1,
+                     `North Sea&English Channel&Bay of Biscay&Mediterranean Sea`=1,
+                     `North Sea&Subtropical ocean&Bay of Biscay&Mediterranean Sea`=1,
+                     `English Channel&North Sea&Black Sea&Mediterranean Sea`=2,
+                     `English Channel&Subtropical ocean&Black Sea&Mediterranean Sea`=1,
+                     `Subtropical ocean&Bay of Biscay&English Channel&Mediterranean Sea`=1,
+                     `North Sea&Bay of Biscay&English Channel&Mediterranean Sea`=1,
+                     `Subtropical ocean&Black Sea&English Channel&Mediterranean Sea`=2,
+                     `North Sea&Black Sea&English Channel&Mediterranean Sea`=1,
+                     `Subtropical ocean&English Channel&North Sea&Mediterranean Sea`=2,
+                     `English Channel&Subtropical ocean&North Sea&Mediterranean Sea`=1,
+                     `English Channel&Black Sea&Subtropical ocean&Mediterranean Sea`=1,
+                     `English Channel&North Sea&Subtropical ocean&Mediterranean Sea`=2,
+                     `Subtropical ocean&English Channel&Bay of Biscay`=1,
+                     `English Channel&Mediterranean Sea&Bay of Biscay`=1,
+                     `Subtropical ocean&Mediterranean Sea&Bay of Biscay`=44,
+                     `Black Sea&Mediterranean Sea&Bay of Biscay`=1,
+                     `North Sea&Mediterranean Sea&Bay of Biscay`=2,
+                     `English Channel&North Sea&Bay of Biscay`=2,
+                     `Mediterranean Sea&Subtropical ocean&Bay of Biscay`=29,
+                     `North Sea&Bay of Biscay&Black Sea`=1,
+                     `Mediterranean Sea&English Channel&Black Sea`=3,
+                     `Subtropical ocean&Mediterranean Sea&Black Sea`=5,
+                     `English Channel&North Sea&Black Sea`=2,
+                     `Mediterranean Sea&Subtropical ocean&Black Sea`=1,
+                     `North Sea&Subtropical ocean&Black Sea`=1,
+                     `Subtropical ocean&Bay of Biscay&English Channel`=1,
+                     `North Sea&Bay of Biscay&English Channel`=1,
+                     `Subtropical ocean&Mediterranean Sea&English Channel`=48,
+                     `North Sea&Mediterranean Sea&English Channel`=1,
+                     `Subtropical ocean&North Sea&English Channel`=1,
+                     `Mediterranean Sea&North Sea&English Channel`=1,
+                     `Mediterranean Sea&Subtropical ocean&English Channel`=21,
+                     `Subtropical ocean&Bay of Biscay&Mediterranean Sea`=12,
+                     `English Channel&Black Sea&Mediterranean Sea`=1,
+                     `Subtropical ocean&Black Sea&Mediterranean Sea`=2,
+                     `North Sea&Black Sea&Mediterranean Sea`=1,
+                     `Subtropical ocean&English Channel&Mediterranean Sea`=17,
+                     `North Sea&English Channel&Mediterranean Sea`=2,
+                     `English Channel&North Sea&Mediterranean Sea`=1,
+                     `Subtropical ocean&North Sea&Mediterranean Sea`=4,
+                     `Black Sea&North Sea&Mediterranean Sea`=1,
+                     `English Channel&Subtropical ocean&Mediterranean Sea`=15,
+                     `Bay of Biscay&Subtropical ocean&Mediterranean Sea`=1,
+                     `Black Sea&Subtropical ocean&Mediterranean Sea`=2,
+                     `North Sea&Subtropical ocean&Mediterranean Sea`=3,
+                     `Subtropical ocean&Bay of Biscay`=11,
+                     `Mediterranean Sea&Bay of Biscay`=3,
+                     `Subtropical ocean&Black Sea`=1,
+                     `Mediterranean Sea&Black Sea`=3,
+                     `North Sea&Black Sea`=12,
+                     `Subtropical ocean&English Channel`=8,
+                     `Black Sea&English Channel`=12,
+                     `Mediterranean Sea&English Channel`=7,
+                     `North Sea&English Channel`=1,
+                     `English Channel&Mediterranean Sea`=22,
+                     `Subtropical ocean&Mediterranean Sea`=1116,
+                     `Black Sea&Mediterranean Sea`=7,
+                     `North Sea&Mediterranean Sea`=12,
+                     `English Channel`=1,
+                     `Subtropical ocean`=566,
+                     `Black Sea`=18,
+                     `Mediterranean Sea`=72,
+                     `North Sea`=52,
+                     `English Channel&North Sea`=3,
+                     `Subtropical ocean&North Sea`=5,
+                     `Mediterranean Sea&North Sea`=15,
+                     `English Channel&Subtropical ocean`=15,
+                     `Black Sea&Subtropical ocean`=1,
+                     `Mediterranean Sea&Subtropical ocean`=426,
+                     `North Sea&Subtropical ocean`=1,
+                     `Mediterranean Sea&Black Sea&North Sea`=2,
+                     `Mediterranean Sea&English Channel&North Sea`=4,
+                     `English Channel&Mediterranean Sea&North Sea`=5,
+                     `Subtropical ocean&Mediterranean Sea&North Sea`=40,
+                     `Black Sea&Mediterranean Sea&North Sea`=1,
+                     `English Channel&Subtropical ocean&North Sea`=1,
+                     `Mediterranean Sea&Subtropical ocean&North Sea`=10,
+                     `Mediterranean Sea&Bay of Biscay&Subtropical ocean`=4,
+                     `Mediterranean Sea&English Channel&Subtropical ocean`=23,
+                     `English Channel&Mediterranean Sea&Subtropical ocean`=17,
+                     `North Sea&Mediterranean Sea&Subtropical ocean`=2,
+                     `English Channel&North Sea&Subtropical ocean`=2,
+                     `Mediterranean Sea&North Sea&Subtropical ocean`=8,
+                     `English Channel&Mediterranean Sea&Bay of Biscay&North Sea`=1,
+                     `Subtropical ocean&Mediterranean Sea&Bay of Biscay&North Sea`=6,
+                     `Mediterranean Sea&English Channel&Black Sea&North Sea`=1,
+                     `Mediterranean Sea&Subtropical ocean&Black Sea&North Sea`=1,
+                     `Subtropical ocean&Mediterranean Sea&English Channel&North Sea`=7,
+                     `Mediterranean Sea&Subtropical ocean&English Channel&North Sea`=6,
+                     `Subtropical ocean&English Channel&Mediterranean Sea&North Sea`=5,
+                     `Bay of Biscay&English Channel&Mediterranean Sea&North Sea`=1,
+                     `Black Sea&English Channel&Mediterranean Sea&North Sea`=2,
+                     `English Channel&Subtropical ocean&Mediterranean Sea&North Sea`=6,
+                     `Mediterranean Sea&English Channel&Subtropical ocean&North Sea`=4,
+                     `English Channel&Mediterranean Sea&Subtropical ocean&North Sea`=7,
+                     `North Sea&Mediterranean Sea&English Channel&Subtropical ocean`=1,
+                     `Mediterranean Sea&North Sea&English Channel&Subtropical ocean`=1,
+                     `English Channel&North Sea&Mediterranean Sea&Subtropical ocean`=2,
+                     `Mediterranean Sea&English Channel&North Sea&Subtropical ocean`=2,
+                     `English Channel&Mediterranean Sea&North Sea&Subtropical ocean`=2,
+                     `Subtropical ocean&Mediterranean Sea&English Channel&Bay of Biscay&North Sea`=2,
+                     `Mediterranean Sea&Subtropical ocean&English Channel&Bay of Biscay&North Sea`=2,
+                     `Subtropical ocean&English Channel&Mediterranean Sea&Bay of Biscay&North Sea`=3,
+                     `Mediterranean Sea&English Channel&Subtropical ocean&Bay of Biscay&North Sea`=3,
+                     `English Channel&Mediterranean Sea&Subtropical ocean&Bay of Biscay&North Sea`=1,
+                     `Subtropical ocean&Mediterranean Sea&English Channel&Black Sea&North Sea`=2,
+                     `Mediterranean Sea&Subtropical ocean&English Channel&Black Sea&North Sea`=1,
+                     `Subtropical ocean&English Channel&Mediterranean Sea&Black Sea&North Sea`=1,
+                     `English Channel&Subtropical ocean&Mediterranean Sea&Black Sea&North Sea`=1,
+                     `Mediterranean Sea&Subtropical ocean&Bay of Biscay&English Channel&North Sea`=1,
+                     `Subtropical ocean&Mediterranean Sea&Black Sea&English Channel&North Sea`=1,
+                     `Mediterranean Sea&Subtropical ocean&Black Sea&English Channel&North Sea`=1,
+                     `English Channel&Black Sea&Subtropical ocean&Mediterranean Sea&North Sea`=1,
+                     `Black Sea&English Channel&Subtropical ocean&Mediterranean Sea&North Sea`=1,
+                     `English Channel&Black Sea&Mediterranean Sea&Subtropical ocean&North Sea`=1,
+                     `Black Sea&English Channel&Mediterranean Sea&Subtropical ocean&North Sea`=1,
+                     `Mediterranean Sea&English Channel&North Sea&Black Sea&Subtropical ocean`=2,
+                     `English Channel&Mediterranean Sea&Black Sea&North Sea&Subtropical ocean`=1,
+                     `Subtropical ocean&Mediterranean Sea&Black Sea&English Channel&Bay of Biscay&North Sea`=2,
+                     `Subtropical ocean&Mediterranean Sea&English Channel&Bay of Biscay&Black Sea&North Sea`=1,
+                     `Subtropical ocean&English Channel&Mediterranean Sea&Bay of Biscay&Black Sea&North Sea`=1,
+                     `Subtropical ocean&Mediterranean Sea&Black Sea&Bay of Biscay&English Channel&North Sea`=1)                     
+
+# Plot
+upset(fromExpression(expressionInput), order.by = "freq",
+      nsets = 6,
+      nintersects = 172, 
+      text.scale = 1.1, 
+      point.size = 2.8, 
+      line.size = 1,
+      mainbar.y.label = "Shared Syndiniales CCs (nb)", 
+      sets.x.label = "Occurrence of Syndiniales CCs (nb)")
+
+grid.text("Dino-Group-II", x = 0.65, y = 0.95,
+          gp = gpar(fontsize = 18))
+```
+
+
+## Dino-Group-III
+
+```{r}
+# Count occurrences of group III
+data3 <- data[data$Order=="Dino-Group-III",]
+
+d3 <- data.frame(table(data3$Location1,data3$Location2,data3$Location3,data3$Location4,data3$Location5,data3$Location6))
+
+# Sum should be 212 CC
+sum(d3$Freq)
+
+d3_no0 <- d3[d3$Freq!=0,]
+d3_no0_detail <- data.frame(paste('`',d3_no0$Var1,'&',d3_no0$Var2,'&',
+                                  d3_no0$Var3,'&',d3_no0$Var4,'&',d3_no0$Var5,
+                                  '&',d3_no0$Var6,'`','=',d3_no0$Freq,',',sep=""))
+
+# Set data
+expressionInput <- c(
+  `English Channel&Mediterranean Sea&Subtropical ocean&North Sea&Black Sea&Bay of Biscay`=1,
+  `Mediterranean Sea&North Sea&Subtropical ocean&Black Sea&English Channel&Bay of Biscay`=1,
+  `Black Sea&Subtropical ocean&Mediterranean Sea&North Sea&English Channel&Bay of Biscay`=1,
+  `Mediterranean Sea&English Channel&North Sea&Black Sea&Subtropical ocean&Bay of Biscay`=1,
+  `Mediterranean Sea&Subtropical ocean&English Channel&Bay of Biscay&North Sea&Black Sea`=1,
+  `Mediterranean Sea&English Channel&Subtropical ocean&North Sea&Bay of Biscay`=1,
+  `North Sea&Mediterranean Sea&Bay of Biscay&Black Sea&English Channel`=1,
+  `Mediterranean Sea&Subtropical ocean&English Channel&Bay of Biscay`=1,
+  `Black Sea&North Sea&Mediterranean Sea&Bay of Biscay`=1,
+  `Mediterranean Sea&Black Sea&Subtropical ocean&Bay of Biscay`=1,
+  `Mediterranean Sea&English Channel&Subtropical ocean&Bay of Biscay`=1,
+  `Mediterranean Sea&Subtropical ocean&Bay of Biscay&English Channel`=1,
+  `North Sea&Black Sea&Mediterranean Sea&English Channel`=1,
+  `Mediterranean Sea&Black Sea&Bay of Biscay`=1,
+  `English Channel&Mediterranean Sea&Bay of Biscay`=1,
+  `Subtropical ocean&Mediterranean Sea&Bay of Biscay`=10,
+  `Mediterranean Sea&Subtropical ocean&Bay of Biscay`=6,
+  `North Sea&Mediterranean Sea&Black Sea`=2,
+  `Mediterranean Sea&North Sea&Black Sea`=3,
+  `Mediterranean Sea&Bay of Biscay&English Channel`=1,
+  `Subtropical ocean&Mediterranean Sea&English Channel`=2,
+  `Mediterranean Sea&Subtropical ocean&English Channel`=1,
+  `Subtropical ocean&Bay of Biscay&Mediterranean Sea`=1,
+  `Black Sea&North Sea&Mediterranean Sea`=2,
+  `Mediterranean Sea&Bay of Biscay`=4,
+  `English Channel&Black Sea`=1,
+  `Subtropical ocean&Black Sea`=1,
+  `Mediterranean Sea&Black Sea`=4,
+  `North Sea&Black Sea`=4,
+  `English Channel&Mediterranean Sea`=1,
+  `Subtropical ocean&Mediterranean Sea`=67,
+  `Bay of Biscay&Mediterranean Sea`=1,
+  `Black Sea&Mediterranean Sea`=4,
+  `North Sea&Mediterranean Sea`=3,
+  `Subtropical ocean`=16,
+  `Black Sea`=3,
+  `Mediterranean Sea`=12,
+  `North Sea`=1,
+  `English Channel&North Sea`=1,
+  `Mediterranean Sea&North Sea`=4,
+  `Mediterranean Sea&Subtropical ocean`=19,
+  `Subtropical ocean&Bay of Biscay&North Sea`=1,
+  `Mediterranean Sea&Black Sea&North Sea`=3,
+  `English Channel&Mediterranean Sea&North Sea`=1,
+  `Subtropical ocean&Mediterranean Sea&North Sea`=1,
+  `Black Sea&Mediterranean Sea&North Sea`=2,
+  `Mediterranean Sea&Bay of Biscay&Subtropical ocean`=1,
+  `Mediterranean Sea&English Channel&Subtropical ocean`=2,
+  `Mediterranean Sea&Bay of Biscay&Black Sea&North Sea`=2,
+  `Subtropical ocean&Mediterranean Sea&English Channel&North Sea`=1,
+  `Black Sea&Bay of Biscay&Mediterranean Sea&North Sea`=1,
+  `Mediterranean Sea&Black Sea&Subtropical ocean&North Sea`=1,
+  `English Channel&Mediterranean Sea&Subtropical ocean&North Sea`=1,
+  `English Channel&Mediterranean Sea&North Sea&Subtropical ocean`=1,
+  `Mediterranean Sea&Subtropical ocean&English Channel&Black Sea&North Sea`=1,
+  `Mediterranean Sea&Subtropical ocean&Black Sea&English Channel&North Sea`=1,
+  `English Channel&Mediterranean Sea&North Sea&Black Sea&Subtropical ocean`=1,
+  `Mediterranean Sea&English Channel&Subtropical ocean&Bay of Biscay&Black Sea&North Sea`=1,
+  `Mediterranean Sea&Bay of Biscay&Subtropical ocean&English Channel&Black Sea&North Sea`=1)                     
+
+# Plot
+upset(fromExpression(expressionInput), order.by = "freq",
+      nsets = 6,
+      nintersects = 59, 
+      text.scale = 1.1, 
+      point.size = 2.8, 
+      main.bar.color = "gray23",
+      line.size = 1,
+      mainbar.y.label = "Shared Syndiniales CCs (nb)", 
+      sets.x.label = "Occurrence of Syndiniales CCs (nb)")
+
+grid.text("Dino-Group-III", x = 0.65, y = 0.95,
+          gp = gpar(fontsize = 18))
+```
+
+
+## Dino-Group-V
+
+```{r}
+# Count occurrences of group V
+data5 <- data[data$Order=="Dino-Group-V",]
+
+d5 <- data.frame(table(data5$Location1,data5$Location2,data5$Location3,data5$Location4,data5$Location5,data5$Location6))
+
+# Sum should be 13 CC
+sum(d5$Freq)
+
+d5_no0 <- d5[d5$Freq!=0,]
+d5_no0_detail <- data.frame(paste('`',d5_no0$Var1,'&',d5_no0$Var2,'&',
+                                  d5_no0$Var3,'&',d5_no0$Var4,'&',d5_no0$Var5,
+                                  '&',d5_no0$Var6,'`','=',d5_no0$Freq,',',sep=""))
+
+# Set data
+expressionInput <- c(`North Sea` = 0, `English Channel` = 0, `Black Sea` = 0, 
+                     `Bay of Biscay` = 0, `Mediterranean Sea` = 1, `Trop./Subtropical Ocean` = 2,
+                     `Mediterranean Sea&Trop./Subtropical Ocean` = 5, 
+                     `English Channel&Trop./Subtropical Ocean` = 1, 
+                     
+                     `English Channel&Mediterranean Sea&Trop./Subtropical Ocean` = 3, 
+                     `English Channel&Bay of Biscay&Mediterranean Sea&Trop./Subtropical Ocean` = 1) 
+
+# Plot
+upset(fromExpression(expressionInput), order.by = "freq",
+      nsets = 6,
+      nintersects = 10, 
+      text.scale = 1.1, 
+      point.size = 2.8, 
+      main.bar.color = "gray23",
+      line.size = 1,
+      mainbar.y.label = "Shared Syndiniales CCs (nb)", 
+      sets.x.label = "Occurrence of Syndiniales CCs (nb)")
+
+grid.text("Dino-Group-V", x = 0.65, y = 0.95,
+          gp = gpar(fontsize = 18))
+```
+
+## Dino-Group-Unknown
+
+```{r}
+# Count occurrences of group Unknown
+dataU <- data[data$Order=="Unknown",]
+
+du <- data.frame(table(dataU$Location1,dataU$Location2,dataU$Location3,dataU$Location4,dataU$Location5,dataU$Location6))
+
+# Sum should be 212 CC
+sum(du$Freq)
+
+dU_no0 <- du[du$Freq!=0,]
+```
+
+
+
+## 4. Redundancy Analysis (RDA)
+
+A Redundancy Analysis is a statistical computation method that attempts to explain biological observations with environmental factors. It calculates the correlation between the variation of abundance of biological entities (here: clusters of unassigned genera of marine parasites) and the variation of physico-chemical parameters in the environment. 
+
+Therefore its input sources are 2 matrices:
+*Response variables: abundance matrix of CCs 
+*Explanatory variables: metadata associated with the studied CCs
+
+## Abundance data selection
+
+A function was coded to retrieve an abundance matrix of CCs into the dataset samples. 
+The abundance of a CC is defined as the sum of the abundances of the sequences defining the CC.
+
+The selected CCs were those occurring in Mediterranean and Tropical ocean samples, as we aim to explore the patterns of shared parasite diversity that were observed with Figure 2.
+
+The CC abundance matrix was transformed by the Hellinger distance. This transformation is suitable for reducing the weight of low abundances and 0, as it is the case in our data.
+
+```{r}
+######### CC abundance table #########
+# Function for sample and abundance of each CC
+#######################################################
+###*************************************************###
+## For all CC of a graph ##
+abund.info <- function(CC) {
+  # Get the sample name
+  a <- data.frame((V(CC)$name))
+  a[,1] <- as.character(a[,1])
+  
+  b <- data.frame(str_split_fixed(a[,1], "_", 4))
+  
+  # Split sample name and abundance info depending on dataset
+  sample <- c()
+  abund <- c()
+  for(i in 1:nrow(b)) {
+    if (b[i,2] == "AstanTS") { 
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[2])))
+    }
+    else if (b[i,2] == "BlanesTS") {
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[2])))
+    }
+    else if (b[i,3] == "MalaSurf") {
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[2])))
+    }
+    else if (b[i,2] == "MOOSE") {
+      sample <- c(sample,paste(b[i,3])) ; 
+      abund <- c(abund,as.numeric(paste(b[i,4])))
+    }
+    else if (b[i,2] == "SolaTS") {
+      sample <- c(sample,paste(b[i,3])) ; 
+      abund <- c(abund,as.numeric(paste(b[i,4])))
+    }
+    else if (b[i,2] == "Biomarks") {
+      sample <- c(sample,paste(b[i,3])) ; 
+      abund <- c(abund,as.numeric(paste(b[i,4])))
+    }
+    else if (b[i,3] == "MalaVP") {
+      k <- str_split_fixed(b[i,4], "_", 3) ;
+      sample <- c(sample,paste(b[i,3],k[1],k[2],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[3])))
+    }
+    else {
+      k <- str_split_fixed(b[i,4], "_", 5) ;
+      sample <- c(sample,paste(b[i,3],k[1],k[2],k[3],k[4],sep="_")) ;
+      abund <- c(abund,as.numeric(paste(k[5])))
+    }
+  }
+  
+  location <- V(CC)$Sea
+  
+  # Data frame with all rows of a CC
+  dff <- data.frame(sample, abund, location)
+  
+  return(dff) 
+}
+###*************************************************###
+#######################################################
+d = lapply(dg_synd_uk,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_synd_uk), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+length(unique(df_CC$CC_id))
+
+# Keep only Med and Mal data
+df_CC_ST <- subset(df_CC,df_CC$location == "Mediterranean Sea" | df_CC$location=="Subtropical ocean")
+length(unique(df_CC_ST$CC_id)) # 4037 clusters found either in Med Sea or Tropics
+
+# Change order of columns to have 
+df_CC_ST <- df_CC_ST[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~sample, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as first column
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,4038],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Sample"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+```
+
+## Metadata selection
+
+```{r}
+######### CC environmental info table #########
+# Environmental table info with samples as rows
+meta=read.csv("Metadata_RDA_170122.csv", h=T, sep=";")
+
+# Homogenise sample names
+moose <- meta[meta$Sample %like% "MGE",1]
+moose <- str_replace(moose, "_", ".")
+moose <- str_replace(moose, "_", ".")
+moose <- str_replace(moose, "_", ".")
+moose <- str_replace(moose, "_", ".")
+moose <- str_replace(moose, "_", ".")
+meta[meta$Sample %like% "MGE",1] <- moose
+
+# Keep only quantitative exploratory variables
+meta_rda <- meta %>% select(1,9,10:22)
+summary(meta_rda)
+
+# Merge abundance table and metadata
+CC_rda <- merge(abund_CC_st,meta_rda,by="Sample")
+
+# Re-separate matrices of CCs and environmental info
+meta_rda <- CC_rda %>% select(1,((ncol(CC_rda))-12):ncol(CC_rda))
+abund_rda <- CC_rda %>% select(1:(ncol(CC_rda)-14))
+
+# Set first column as row names
+rownames(meta_rda) <- meta_rda[,1]
+meta_rda[,1] <- NULL
+
+# Set first column as row names
+rownames(abund_rda) <- abund_rda[,1]
+abund_rda[,1] <- NULL
+
+# Replace NAs by mean of column
+meta_rda <- replace_na(meta_rda,as.list(colMeans(meta_rda,na.rm=T)))
+
+# 4037 CC and 1055 samples
+```
+
+
+## Global RDA
+
+```{r}
+# Redundancy analysis with formula interface and all variables
+rda<-rda(formula = abund_rda ~ T + Chla + PO4 + NO3 + S + SIOH4 + O2 + Depth + Latitude + Longitude, data = meta_rda)
+#saveRDS(rda, file="RDA_Synd_Med_Trop_global.RDS")
+#rda<-readRDS(file="RDA_Synd_Med_Trop_global.RDS")
+
+# Get analysis info for plot
+s = summary(rda)
+
+# CC info
+sp=as.data.frame(s$species[,1:2])
+# Sample info
+st=as.data.frame(s$sites[,1:2])
+# CC and sample: biplot
+bi=as.data.frame(s$biplot[,1:2])
+
+# Add location and depth info to stations
+df_location <- meta %>% select(1,3,8,10)
+
+st2 <- cbind(rownames(st), data.frame(st, row.names=NULL))
+names(st2)[names(st2) == "rownames(st)"] <- "Sample"
+st_info <- merge(st2,df_location,by="Sample")
+table(st_info$Sea)
+
+rownames(st_info) <- st_info[,1]
+st_info[,1] <- NULL
+
+# Separate depth in SRF, DCM, MESO, BATHY
+st_info$Depth <- as.numeric(paste(st_info$Depth))
+summary(st_info$Depth)
+
+st_info1 <- st_info[st_info$Depth_type=="Net",]
+st_info2 <- st_info[st_info$Depth_type!="Net",]
+
+st_info2$Depth_type[st_info2$Depth <= 5] <- "SRF"
+st_info2$Depth_type[st_info2$Depth > 5] <- "DCM" 
+st_info2$Depth_type[st_info2$Depth >= 200] <- "MESO"
+st_info2$Depth_type[st_info2$Depth >= 1000] <- "BATHY"
+
+st_info3 <- rbind(st_info2,st_info1)
+summary(st_info3)
+unique(st_info3$Depth_type)
+
+st_info3$Depth_type <- factor(st_info3$Depth_type,levels = c("SRF","DCM","MESO","BATHY","Net"))
+
+# Plot RDA 
+p_rda <-ggplot() +
+  # Points aes related to sample info
+  geom_point(data = st, aes(RDA1,RDA2, col=st_info3$Sea, shape=st_info3$Depth_type), size=3.5, alpha=0.5)+
+  scale_colour_manual(name="Marine region",values=c("orangered","turquoise4")) +
+  scale_shape_manual(values = c(16,17,15,3,9)) +
+# Points aesthetics related to CCs
+  geom_point(data = sp, aes(RDA1,RDA2), pch=8, size=2, alpha=1) +
+  # Segments aesthetics are related to metadata
+  geom_segment(data = bi,aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+               arrow = arrow(length = unit(0.2,"cm")),linetype=1, size=0.5,colour = "chartreuse4") +
+  geom_text(data = bi,aes(RDA1,RDA2,label=row.names(bi)), colour="chartreuse4",hjust=0.3,vjust=-1) +
+  # Add labels with % of variance explained
+  labs(x=paste("RDA 1 (", format(100 *s$cont[[1]][2,1], digits=4), "%)", sep=""),
+       y=paste("RDA 2 (", format(100 *s$cont[[1]][2,2], digits=4), "%)", sep="")) +
+  # Grid parameters
+  geom_hline(yintercept=0,linetype=3,size=0.5) + 
+  geom_vline(xintercept=0,linetype=3,size=0.5) +
+  guides(shape=guide_legend(title="Depth type" ,color="black")) +
+  # General theme
+  theme_bw() +
+  # Axis 
+  theme(axis.title.y=element_text(face = "bold")) +
+  theme(axis.title.x=element_text(face = "bold")) +
+  # Legend
+  theme(legend.title = element_text(face="bold"))
+
+plot(p_rda)
+```
+
+## RDA with selected explanatory variables (Figure 3B)
+
+Once we have tested the significance of the global RDA we chose the explanatory variables that are the most pertinent for us regarding our question. 
+
+```{r}
+# Redundancy analysis with formula interface and all variables
+rda<-rda(formula = abund_rda ~ T + Chla + PO4 + NO3 + S + SIOH4 + O2 + Depth, data = meta_rda)
+# saveRDS(rda, file="RDA_Synd_Med_Trop.RDS")
+rda<-readRDS(file="RDA_Synd_Med_Trop.RDS")
+
+# Get analysis info for plot
+s = summary(rda)
+
+# CC info
+sp=as.data.frame(s$species[,1:2])
+# Sample info
+st=as.data.frame(s$sites[,1:2])
+# CC and sample: biplot
+bi=as.data.frame(s$biplot[,1:2])
+
+# Add location and depth info to stations
+df_location <- meta %>% select(1,3,8,10)
+
+st2 <- cbind(rownames(st), data.frame(st, row.names=NULL))
+names(st2)[names(st2) == "rownames(st)"] <- "Sample"
+st_info <- merge(st2,df_location,by="Sample")
+table(st_info$Sea)
+
+rownames(st_info) <- st_info[,1]
+st_info[,1] <- NULL
+
+# Separate depth in SRF, DCM, MESO, BATHY
+st_info$Depth <- as.numeric(paste(st_info$Depth))
+summary(st_info$Depth)
+
+st_info1 <- st_info[st_info$Depth_type=="Net",]
+st_info2 <- st_info[st_info$Depth_type!="Net",]
+
+st_info2$Depth_type[st_info2$Depth <= 5] <- "SRF"
+st_info2$Depth_type[st_info2$Depth > 5] <- "DCM" 
+st_info2$Depth_type[st_info2$Depth >= 200] <- "MESO"
+st_info2$Depth_type[st_info2$Depth >= 1000] <- "BATHY"
+
+st_info3 <- rbind(st_info2,st_info1)
+summary(st_info3)
+unique(st_info3$Depth_type)
+
+st_info3$Depth_type <- factor(st_info3$Depth_type,levels = c("SRF","DCM","MESO","BATHY","Net"))
+
+# Plot RDA 
+p_rda <-ggplot() +
+  # Points aes related to sample info
+  geom_point(data = st, aes(RDA1,RDA2, col=st_info3$Sea, shape=st_info3$Depth_type), size=3.5, alpha=0.5)+
+  scale_colour_manual(name="Marine region",values=c("orangered","turquoise4")) +
+  scale_shape_manual(values = c(16,17,15,3,9)) +
+# Points aesthetics related to CCs
+  geom_point(data = sp, aes(RDA1,RDA2), pch=8, size=2, alpha=1) +
+  # Segments aesthetics are related to metadata
+  geom_segment(data = bi,aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+               arrow = arrow(length = unit(0.2,"cm")),linetype=1, size=0.5,colour = "chartreuse4") +
+  geom_text(data = bi,aes(RDA1,RDA2,label=row.names(bi)), colour="chartreuse4",hjust=0.3,vjust=-1) +
+  # Add labels with % of variance explained
+  labs(x=paste("RDA 1 (", format(100 *s$cont[[1]][2,1], digits=4), "%)", sep=""),
+       y=paste("RDA 2 (", format(100 *s$cont[[1]][2,2], digits=4), "%)", sep="")) +
+  # Grid parameters
+  geom_hline(yintercept=0,linetype=3,size=0.5) + 
+  geom_vline(xintercept=0,linetype=3,size=0.5) +
+  guides(shape=guide_legend(title="Depth type" ,color="black")) +
+  # General theme
+  theme_bw() +
+  # Axis 
+  theme(axis.title.y=element_text(face = "bold")) +
+  theme(axis.title.x=element_text(face = "bold")) +
+  # Legend
+  theme(legend.title = element_text(face="bold"))
+
+plot(p_rda)
+```
+
+## ANOVA
+
+In order to test the significance of the RDA, an ANOVA was run on the global analysis and on each axis of the RDA. 
+
+These tests need 20min - 1h to run. Thus here the code is indicated but not run. 
+The test on each RDA axis is demanding in computation power and was run on a ABiMs computer cluster of Roscoff Marine Station. The required bash and R scripts are available on the Github.
+
+Results are indicated for both tests.
+
+```{r}
+#1# Global RDA significance
+## Test significance of RDA with all environmental variables 
+anova.cca(rda, step=1000)
+
+# Permutation test for rda under reduced model
+# Permutation: free
+# Number of permutations: 999
+
+# Model: rda(formula = abund_rda ~ T + Chla + PO4 + NO3 + S + SIOH4 + O2 + Depth + Latitude + Longitude, data = meta_rda)
+#           Df Variance     F Pr(>F)    
+# Model      10  0.11478 15.94  0.001 ***
+# Residual 1044  0.75175                 
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+## Run completed in 15 min
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#2# Test if each RDA axis is statistically significant --> bash script, run on slurm cluster
+
+# Bash script: Anova_RDA.sh
+# Rscript: Rscript_Anova_RDA.R
+# Output: Rscript_Anova_RDA.Rout
+
+# Output detail:
+
+# > anova.cca(rda, by="axis", model="direct", step=1000, cutoff=1, parallel = getOption("mc.cores"))
+# Permutation test for rda under direct model
+# Forward tests for axes
+# Permutation: free
+# Number of permutations: 999
+
+# This is vegan 2.5-7
+# > 
+# > anova.cca(rda, by="axis", model="direct", step=1000, cutoff=1, parallel = getOption("mc.cores"))
+# Permutation test for rda under direct model
+# Forward tests for axes
+# Permutation: free
+# Number of permutations: 999
+
+# Model: rda(formula = abund_rda ~ T + Chla + PO4 + NO3 + S + SIOH4 + O2 + Depth, data = meta_rda)
+#           Df Variance       F Pr(>F)    
+# RDA1        1  0.05090 70.1299  0.001 ***
+# RDA2        1  0.02531 34.8663  0.001 ***
+# RDA3        1  0.01497 20.6192  0.001 ***
+# RDA4        1  0.00625  8.6095  0.001 ***
+# RDA5        1  0.00364  5.0179  0.001 ***
+# RDA6        1  0.00282  3.8848  0.001 ***
+# RDA7        1  0.00227  3.1317  0.001 ***
+# RDA8        1  0.00119  1.6354  0.002 ** 
+# Residual 1046  0.75919                   
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# > proc.time()
+#     user    system   elapsed 
+# 11790.861  3844.320  4525.318 
+
+## Run completed in 1h10.
+```
+
+## 5. Exploration of shared Syndiniales diversity across depth
+
+The oceanographic campaigns Malaspina and MOOSE have collected samples from the surface up to 2000 m in the Mediterranean sea and up to 4000 m in the Subtropical/Tropical ocean.
+
+We have selected samples from Vertical Profile stations in order to get a more precise view of the shared parasite diversity patterns across the water column.
+
+```{r}
+## Extract vertical distribution data 
+######### CC abundance table #########
+# Function for sample and abundance of each CC
+#######################################################
+###*************************************************###
+## For all CC of a graph ##
+distrib.VP.info <- function(CC) {
+  # Get the sample name
+  a <- data.frame(V(CC)$name)
+  a[,1] <- as.character(a[,1])
+  
+  b <- data.frame(str_split_fixed(a[,1], "_", 4))
+  
+  # Split sample name and abundance info depending on dataset
+  sample <- c()
+  for(i in 1:nrow(b)) {
+    if (b[i,2] == "AstanTS") { 
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+    }
+    else if (b[i,2] == "BlanesTS") {
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+    }
+    else if (b[i,3] == "MalaSurf") {
+      k <- str_split_fixed(b[i,4], "_", 2) ;
+      sample <- c(sample,paste(b[i,3],k[1],sep="_")) ;
+    }
+    else if (b[i,2] == "MOOSE") {
+      sample <- c(sample,paste(b[i,3])) ; 
+    }
+    else if (b[i,2] == "SolaTS") {
+      sample <- c(sample,paste(b[i,3])) ; 
+    }
+    else if (b[i,2] == "Biomarks") {
+      sample <- c(sample,paste(b[i,3])) ; 
+    }
+    else if (b[i,3] == "MalaVP") {
+      k <- str_split_fixed(b[i,4], "_", 3) ;
+      sample <- c(sample,paste(b[i,3],k[1],k[2],sep="_")) ;
+    }
+    else {
+      k <- str_split_fixed(b[i,4], "_", 5) ;
+      sample <- c(sample,paste(b[i,3],k[1],k[2],k[3],k[4],sep="_")) ;
+    }
+  }
+  
+  # Get the depth values
+  depth_m <- V(CC)$Depth
+  sea <- V(CC)$Sea
+  depth_type <- V(CC)$Depth_type
+  depth <- cbind(depth_m, depth_type,sea, sample)
+  depth <- as.data.frame(depth)
+  depth$combined <- paste(depth$depth_m, depth$depth_type)
+  depth <- depth[,3:5]
+  
+  # Get the abundance of each depth measure of each CC (nb of sequences at each depth) and each depth type
+  vertical_profile <- table(depth)
+  vertical_profile <- data.frame(vertical_profile)
+  
+  # Create data frame and split depth measure and depth type into 2 columns
+  depth_split <- str_split_fixed(vertical_profile$combined," ",2)
+  profile <- data.frame(cbind(vertical_profile,depth_split))
+  profile <- subset(profile, select = -c(combined))
+  names(profile)[4] <- "Depth"
+  names(profile)[5] <- "Depth_type"
+  
+  return(profile) 
+}
+###*************************************************###
+#######################################################
+d = lapply(dg_synd_uk,distrib.VP.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_synd_uk), SIMPLIFY=F)
+
+# Create data frame
+df_VP <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_VP$CC_id <- as.character(paste(df_VP$CC_id))
+summary(df_VP)
+
+# Remove 0 freq combinations introduced by table function 
+df_VP2 <- df_VP[df_VP$Freq>0,]
+
+## Filter data
+# Select Mediterranean Sea and Subtropical ocean data
+df2 <- rbind(df_VP2[df_VP2$sea == "Mediterranean Sea",], df_VP2[df_VP2$sea=="Subtropical ocean",])
+table(df2$sea)
+
+# Remove artefact sequences from table function (line 111)
+df3<-df2[(df2$Freq>0),]
+
+# Select Vertical Profile data: from MOOSE campaign in Mediterranean and Malaspina VP samples
+df4 <- rbind(df3[df3$sample %like% "MGE",], df3[df3$sample %like% "MalaVP",])
+
+# Change order of columns
+df5 <- df4[c("CC_id","sample","Depth","Depth_type","sea")]
+
+# Remove MOOSE Net samples
+df6<-df5[!(df5$Depth_type=="Net"),]
+
+# Depth measure are numeric values
+df6$Depth <- as.numeric(df6$Depth)
+unique(df6$Depth_type)
+
+# Separate DEEP into MESO (>=200 < 1000) and BATHY (>=1000)
+df6$Depth_type[df6$Depth <= 5] <- "SRF"
+df6$Depth_type[df6$Depth > 5] <- "DCM" 
+df6$Depth_type[df6$Depth >= 600] <- "MESO"
+df6$Depth_type[df6$Depth >= 1000] <- "BATHY"
+
+unique(df6$Depth_type)
+
+# Number of sequences per depth type
+table(df6$Depth_type)
+
+# Count nb of CCs shared between depth layers
+# Add columns to count presence or absence of CC in a depth layer
+Med_SRF <- c(rep(0,nrow(df6)))
+Med_DCM <- c(rep(0,nrow(df6)))
+Med_MESO <- c(rep(0,nrow(df6)))
+Med_BATHY <- c(rep(0,nrow(df6)))
+
+Mal_SRF <- c(rep(0,nrow(df6)))
+Mal_DCM <- c(rep(0,nrow(df6)))
+Mal_MESO <- c(rep(0,nrow(df6)))
+Mal_BATHY <- c(rep(0,nrow(df6)))
+
+df7 <- cbind(df6,Med_SRF,Med_DCM,Med_MESO,Med_BATHY,Mal_SRF,Mal_DCM,Mal_MESO,Mal_BATHY)
+
+for (i in 1:nrow(df7)) {
+  if (df7[i,4]=="SRF" & df7[i,5]=="Mediterranean Sea") {
+    df7[i,6] <- 1
+  }
+  else if (df7[i,4]=="DCM" & df7[i,5]=="Mediterranean Sea") {
+    df7[i,7] <- 1
+  }
+  else if (df7[i,4]=="MESO" & df7[i,5]=="Mediterranean Sea") {
+    df7[i,8] <- 1
+  }
+  else if (df7[i,4]=="BATHY" & df7[i,5]=="Mediterranean Sea") {
+    df7[i,9] <- 1
+  }
+  else if (df7[i,4]=="SRF" & df7[i,5]=="Subtropical ocean") {
+    df7[i,10] <- 1
+  }
+  else if (df7[i,4]=="DCM" & df7[i,5]=="Subtropical ocean") {
+    df7[i,11] <- 1
+  }
+  else if (df7[i,4]=="MESO" & df7[i,5]=="Subtropical ocean") {
+    df7[i,12] <- 1
+  }
+  else {
+    df7[i,13] <- 1
+  }
+}
+
+# Remove non numeric variables and group by CC
+df8<-subset(df7,select= -c(Depth,Depth_type,sea,sample))
+df9 <- aggregate(.~CC_id, df8, sum)
+
+# Remove CCs present only in one sea region 
+sum_med <- rowSums(df9[,2:5])
+sum_trop <- rowSums(df9[,6:9])
+
+df10 <- cbind(df9, sum_med, sum_trop)
+
+df11 <- df10[(df10$sum_med>0 & df10$sum_trop>0),]
+
+# Select CCs that are common exclusively to Subtropical ocean and Med Sea:
+# Get table with nb of CCs shared between locations
+###################################################
+###*********************************************###
+## For all CC of a graph ##
+shared.loc <- function(CC) {
+  # Sea attributes of CCs
+  locations <- V(CC)$Sea
+  
+  # Sequences of each sea attribute
+  location_abund <- table(locations)
+  
+  # Nb of sea attributes
+  N <- length(location_abund)
+  
+  # Sum of sequences for each CC
+  S <- sum(location_abund)
+  
+  # Locations shared
+  locations <- data.frame((location_abund/S)*100)
+  locations <- locations[order(-locations$Freq), ]
+  
+  if (N==6) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- locations[3,1] ;
+    Location4 <- locations[4,1] ;
+    Location5 <- locations[5,1] ;
+    Location6 <- locations[6,1] ;
+  }
+  else if (N==5) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- locations[3,1] ;
+    Location4 <- locations[4,1] ;
+    Location5 <- locations[5,1] ;
+    Location6 <- "NA" ;
+  }
+  else if (N==4) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- locations[3,1] ;
+    Location4 <- locations[4,1] ;
+    Location5 <- "NA" ;
+    Location6 <- "NA" ;
+  }
+  else if (N==3) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- locations[3,1] ;
+    Location4 <- "NA" ;
+    Location5 <- "NA" ;
+    Location6 <- "NA" ;
+  }
+  else if (N==2) {
+    Location1 <- locations[1,1] ;
+    Location2 <- locations[2,1] ;
+    Location3 <- "NA" ;
+    Location4 <- "NA" ;
+    Location5 <- "NA" ;
+    Location6 <- "NA" ;
+  }
+  else {
+    Location1 <- locations[1,1] ;
+    Location2 <- "NA" ;
+    Location3 <- "NA" ;
+    Location4 <- "NA" ;
+    Location5 <- "NA" ;
+    Location6 <- "NA" ;
+  }
+  
+  # Data frame
+  df <- data.frame(N, S, Location1, Location2, Location3, Location4, Location5, Location6)
+  return(df) 
+}
+###*************************************************###
+#######################################################
+d=lapply(dg_synd_uk,shared.loc)
+
+# Assign id to each CC of graph 
+newlist2 <- mapply(cbind, d, "CC_id"=1:length(dg_synd_uk), SIMPLIFY=F)
+
+# Create data frame
+df_loc <- ldply(newlist2, data.frame)
+df_loc$N <- as.factor(df_loc$N)
+df_loc$CC_id <- as.factor(df_loc$CC_id)
+
+# CCs shared between 2 marine regions
+df_2 <- df_loc[df_loc$N == 2, ]
+
+# Select CCs found in 2 regions and shared only between Med sea and Subtropical ocean
+df_2_med <- subset(df_2, df_2$Location1=="Mediterranean Sea" | df_2$Location2=="Mediterranean Sea")
+df_2_med_trop <- subset(df_2_med, df_2_med$Location1=="Subtropical ocean" | df_2_med$Location2=="Subtropical ocean")
+
+table(df_2_med_trop$Location1)
+table(df_2_med_trop$Location2)
+
+df_2_med_trop <- df_2_med_trop[c("CC_id","Location1","Location2")]
+
+df12 <- merge(df_2_med_trop,df11,by="CC_id")
+df13 <- subset(df12, select=-c(Location1,Location2,sum_trop,sum_med))
+
+# Nb of CCs found at each depth layer in each region
+CC_Med_SRF <- nrow(df13[df13$Med_SRF>0,])
+CC_Med_DCM <- nrow(df13[df13$Med_DCM>0,])
+CC_Med_MESO <- nrow(df13[df13$Med_MESO>0,])
+CC_Med_BATHY <- nrow(df13[df13$Med_BATHY>0,])
+
+CC_Mal_SRF <- nrow(df13[df13$Mal_SRF>0,])
+CC_Mal_DCM <- nrow(df13[df13$Mal_DCM>0,])
+CC_Mal_MESO <- nrow(df13[df13$Mal_MESO>0,])
+CC_Mal_BATHY <- nrow(df13[df13$Mal_BATHY>0,])
+
+## Calculate number of CCs shared per water layer combination
+CCs_shared <- c()
+# Tropical ocean SRF CCs shared with Mediterranean sea SRF
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_SRF>0 & df13$Med_SRF>0,]))
+
+# Tropical ocean SRF CCs shared with Mediterranean sea DCM
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_SRF>0 & df13$Med_DCM>0,]))
+
+# Tropical ocean SRF CCs shared with Mediterranean sea MESO
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_SRF>0 & df13$Med_MESO>0,]))
+
+# Tropical ocean SRF CCs shared with Mediterranean sea BATHY
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_SRF>0 & df13$Med_BATHY>0,]))
+
+#
+# Tropical ocean DCM CCs shared with Mediterranean sea SRF
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_DCM>0 & df13$Med_SRF>0,]))
+
+# Tropical ocean DCM CCs shared with Mediterranean sea DCM
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_DCM>0 & df13$Med_DCM>0,]))
+
+# Tropical ocean DCM CCs shared with Mediterranean sea MESO
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_DCM>0 & df13$Med_MESO>0,]))
+
+# Tropical ocean DCM CCs shared with Mediterranean sea BATHY
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_DCM>0 & df13$Med_BATHY>0,]))
+
+#
+# Tropical ocean MESO CCs shared with Mediterranean sea SRF
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_MESO>0 & df13$Med_SRF>0,]))
+
+# Tropical ocean MESO CCs shared with Mediterranean sea DCM
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_MESO>0 & df13$Med_DCM>0,]))
+
+# Tropical ocean MESO CCs shared with Mediterranean sea MESO
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_MESO>0 & df13$Med_MESO>0,]))
+
+# Tropical ocean MESO CCs shared with Mediterranean sea BATHY
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_MESO>0 & df13$Med_BATHY>0,]))
+
+#
+# Tropical ocean BATHY CCs shared with Mediterranean sea SRF
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_BATHY>0 & df13$Med_SRF>0,]))
+
+# Tropical ocean BATHY CCs shared with Mediterranean sea DCM
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_BATHY>0 & df13$Med_DCM>0,]))
+
+# Tropical ocean BATHY CCs shared with Mediterranean sea MESO
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_BATHY>0 & df13$Med_MESO>0,]))
+
+# Tropical ocean BATHY CCs shared with Mediterranean sea BATHY
+CCs_shared <- c(CCs_shared,nrow(df13[df13$Mal_BATHY>0 & df13$Med_BATHY>0,]))
+
+## Some statistics
+# Nb of CCs shared between Med Sea and Tropics (and other sea regions)
+df_med_all <- subset(df_loc, df_loc$Location1=="Mediterranean Sea" | df_loc$Location2=="Mediterranean Sea"
+                          | df_loc$Location3=="Mediterranean Sea" | df_loc$Location4=="Mediterranean Sea"
+                          | df_loc$Location5=="Mediterranean Sea" | df_loc$Location6=="Mediterranean Sea")
+
+df_med_trop_all <- subset(df_med_all, df_med_all$Location1=="Subtropical ocean" | df_med_all$Location2=="Subtropical ocean"
+                          | df_med_all$Location3=="Subtropical ocean" | df_med_all$Location4=="Subtropical ocean"
+                          | df_med_all$Location5=="Subtropical ocean" | df_med_all$Location6=="Subtropical ocean")
+summary(df_med_trop_all)
+nrow(df_med_trop_all) # 2833
+(nrow(df_med_trop_all)/length(dg_synd_uk))*100
+
+# Nb CCs shared exclusively between Med Sea and Tropics
+nrow(df_2_med_trop) # 2171
+(nrow(df_2_med_trop)/length(dg_synd_uk))*100
+(nrow(df_2_med_trop)/nrow(df_med_trop_all))*100
+
+# Nb CCs shared exclusively between Med Sea and Tropics, Vertical Profile samples
+nrow(df12) # 1213
+(nrow(df12)/length(dg_synd_uk))*100
+```
+
+## Heatmap 
+
+Figure 3A
+
+```{r}
+# Create dataframe
+Depth_trop <- c(rep("SRF",4),rep("DCM",4),rep("MESO",4),rep("BATHY",4))
+Depth_med <- rep(c("SRF","DCM","MESO","BATHY"),4)
+CC_nb<-CCs_shared
+don <- data.frame(Depth_trop,Depth_med,CCs_shared,CC_nb)
+
+don$Depth_trop <- factor(don$Depth_trop,levels = c("BATHY","MESO","DCM","SRF"))
+don$Depth_med <- factor(don$Depth_med,levels = c("BATHY","MESO","DCM","SRF"))
+
+# Calculate % out of total nb of shared CCs
+don$CCs_shared <- don$CCs_shared/nrow(df13)
+sum(don$CCs_shared)
+
+# display_carto_all(colorblind_friendly = TRUE)
+
+# Heatmap
+p1 <- ggplot(don,aes(x=Depth_trop,y=Depth_med,fill=CCs_shared))+
+  geom_tile() +
+  theme_classic() +
+  ylab("Mediterranean Sea") +
+  theme(axis.text.y=element_text(face = "bold")) +
+  xlab("Subtropical Ocean") +
+  theme(axis.text.x=element_text(face = "bold")) +
+  scale_fill_carto_c(palette = "TealGrn") +
+  labs(fill="Shared CCs") +
+  theme(legend.title = element_text(face="bold")) +
+  geom_text(aes(label=CC_nb), vjust=0, hjust=0.5)
+
+plot(p1)
+```
+
+## 6. Comparison of potential Syndiniales host communities
+
+For that we will use the Jaccard dissimilarity index in order to compare the host communities between the two environments for which the novel biogeographic patterns were observed.
+
+The Jaccard dissimilarity index is comprised between 0-1 and measures the extent of dissimilarity in terms of composition between 2 microbial populations. It is based on the Bray-Curtis distance calculated by comparing the abundance matrix of the 2 microbial populations.
+
+A Jaccard dissimilarity of 0 indicates identical composition between the 2 populations, whereas a Jaccard index of 1 indicates a complete dissimilarity between the 2 populations.
+
+The Jaccard index is used here and not the Bray-Curtis, following the vegan package recommendation for the vegdist function. https://search.r-project.org/CRAN/refmans/vegan/html/vegdist.html 
+
+The Jaccard index was also run for all major protist divisions of our dataset (Ochrophyta, Cercozoa, Cryptophyta, Opalozoa, Sagenista) and for the Syndiniales class.
+
+```{r}
+# 1 # Dinophyceae hosts
+########################
+# Select CCs of Dinophyceae Class
+dg_dino <- list()
+for (i in dg) {
+  t <- table(V(i)$Class)
+  t <- data.frame(t)
+  if (t[1,1] == "Dinophyceae" && nrow(t)==1) {
+    dg_dino <- list.append(dg_dino,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_dino,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_dino), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_dino <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                   na.rm = TRUE)
+J_dino <- as.matrix(J_dino)
+J_dino <- data.frame(J_dino)
+
+view(J_dino)
+write.csv(J_dino,"Jaccard_dino.csv")
+
+# 2 # Radiolaria hosts
+########################
+# Select CCs of Radiolaria Division
+dg_rad <- list()
+for (i in dg) {
+  t <- table(V(i)$Division)
+  t <- data.frame(t)
+  if (t[1,1] == "Radiolaria" && nrow(t)==1) {
+    dg_rad <- list.append(dg_rad,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_rad,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_rad), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_rad <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                  na.rm = TRUE)
+J_rad <- as.matrix(J_rad)
+J_rad <- data.frame(J_rad)
+
+view(J_rad)
+write.csv(J_rad,"Jaccard_rad.csv")
+
+########################
+
+# 3 # Ciliophora hosts
+########################
+# Select CCs of Ciliophora Division
+dg_cilio <- list()
+for (i in dg) {
+  t <- table(V(i)$Division)
+  t <- data.frame(t)
+  if (t[1,1] == "Ciliophora" && nrow(t)==1) {
+    dg_cilio <- list.append(dg_cilio,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_cilio,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_cilio), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_cilio <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                 na.rm = TRUE)
+J_cilio <- as.matrix(J_cilio)
+J_cilio <- data.frame(J_cilio)
+
+view(J_cilio)
+write.csv(J_cilio,"Jaccard_cilio.csv")
+########################
+
+# 4 # Ochrophyta
+########################
+# Select CCs of Ochrophyta Division
+dg_ochro <- list()
+for (i in dg) {
+  t <- table(V(i)$Division)
+  t <- data.frame(t)
+  if (t[1,1] == "Ochrophyta" && nrow(t)==1) {
+    dg_ochro <- list.append(dg_ochro,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_ochro,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_ochro), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_ochro <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                   na.rm = TRUE)
+J_ochro <- as.matrix(J_ochro)
+J_ochro <- data.frame(J_ochro)
+
+view(J_ochro)
+
+write.csv(J_ochro,"Jaccard_ochro.csv")
+########################
+
+# 5 # Cercozoa
+########################
+# Select CCs of Cercozoa Division
+dg_cerco <- list()
+for (i in dg) {
+  t <- table(V(i)$Division)
+  t <- data.frame(t)
+  if (t[1,1] == "Cercozoa" && nrow(t)==1) {
+    dg_cerco <- list.append(dg_cerco,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_cerco,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_cerco), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_cerco <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                   na.rm = TRUE)
+J_cerco <- as.matrix(J_cerco)
+J_cerco <- data.frame(J_cerco)
+
+view(J_cerco)
+
+write.csv(J_cerco,"Jaccard_cerco.csv")
+########################
+
+# 6 # Cryptophyta
+########################
+# Select CCs of Cryptophyta Division
+dg_crypt <- list()
+for (i in dg) {
+  t <- table(V(i)$Division)
+  t <- data.frame(t)
+  if (t[1,1] == "Cryptophyta" && nrow(t)==1) {
+    dg_crypt <- list.append(dg_crypt,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_crypt,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_crypt), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_crypt <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                   na.rm = TRUE)
+J_crypt <- as.matrix(J_crypt)
+J_crypt <- data.frame(J_crypt)
+
+view(J_crypt)
+
+write.csv(J_crypt,"Jaccard_crypt.csv")
+########################
+
+# 7 # Opalozoa
+########################
+# Select CCs of Opalozoa Division
+dg_opal <- list()
+for (i in dg) {
+  t <- table(V(i)$Division)
+  t <- data.frame(t)
+  if (t[1,1] == "Opalozoa" && nrow(t)==1) {
+    dg_opal <- list.append(dg_opal,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_opal,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_opal), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_opal <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                   na.rm = TRUE)
+J_opal <- as.matrix(J_opal)
+J_opal <- data.frame(J_opal)
+
+view(J_opal)
+
+write.csv(J_opal,"Jaccard_opal.csv")
+########################
+
+# 8 # Sagenista
+########################
+# Select CCs of Sagenista Division
+dg_sag <- list()
+for (i in dg) {
+  t <- table(V(i)$Division)
+  t <- data.frame(t)
+  if (t[1,1] == "Sagenista" && nrow(t)==1) {
+    dg_sag <- list.append(dg_sag,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_sag,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_sag), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_sag <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                   na.rm = TRUE)
+J_sag <- as.matrix(J_sag)
+J_sag <- data.frame(J_sag)
+
+view(J_sag)
+
+write.csv(J_sag,"Jaccard_sag.csv")
+########################
+
+# 9 # Syndiniales
+########################
+# Select CCs of Syndiniales Class
+dg_synd <- list()
+for (i in dg) {
+  t <- table(V(i)$Class)
+  t <- data.frame(t)
+  if (t[1,1] == "Syndiniales" && nrow(t)==1) {
+    dg_synd <- list.append(dg_synd,i)
+  }
+}
+
+# Create abundance table
+d = lapply(dg_synd,abund.info)
+
+# Assign id to each CC of graph 
+newlist <- mapply(cbind, d, "CC_id"=1:length(dg_synd), SIMPLIFY=F)
+
+# Create data frame
+df_CC <- ldply(newlist, data.frame)
+
+# Set type of variables
+df_CC$CC_id <- as.character(paste(df_CC$CC_id))
+summary(df_CC)
+
+# Change order of columns to have 
+df_CC_ST <- df_CC[c("CC_id","location","sample","abund")]
+
+# Create abundance table with CCs as columns and samples as rows
+abund_CC = cast(df_CC_ST, CC_id~location, sum)
+
+# Set samples as rows and CCs as columns
+abund_CC <- as.data.frame(abund_CC)
+abund_CC <- t(abund_CC)
+colnames(abund_CC) <- abund_CC[1,]
+abund_CC <- abund_CC[-1, ]
+
+# Convert all columns to numeric
+abund_CC <- as.data.frame(abund_CC)
+abund_CC_num <- sapply(abund_CC,as.numeric)
+
+# Set samples as rownames
+abund_CC$Sample <- rownames(abund_CC)
+
+# Standardisation of abundances for RDA
+abund_CC_st <- decostand(abund_CC_num, "hellinger")
+
+# Create standardised dataframe
+abund_CC_st <- cbind(abund_CC[,ncol(abund_CC)],as.data.frame(abund_CC_st))
+names(abund_CC_st)[1] <- "Location"
+
+# Remove samples with 0 abundance
+abund_CC_st <- abund_CC_st[rowSums(abund_CC_st[,2:ncol(abund_CC_st)]) > 0]
+
+unique(colSums(abund_CC_st[,2:ncol(abund_CC_st)]) >0)
+
+abund_CC_st <- as.data.frame(abund_CC_st)
+
+# Set first column as row names
+rownames(abund_CC_st) <- abund_CC_st[,1]
+abund_CC_st[,1] <- NULL
+
+# Jaccard dissimilarity index 
+J_synd <- vegdist(abund_CC_st, method="jaccard", binary=FALSE, diag=FALSE, upper=FALSE,
+                   na.rm = TRUE)
+J_synd <- as.matrix(J_synd)
+J_synd <- data.frame(J_synd)
+
+view(J_synd)
+
+write.csv(J_synd,"Jacccard_synd.csv")
+########################
+
+```
+
+
+## 7. Prioritising unknown clusters: a biogeography approach
+
+Starting from the RDA we can zoom into clusters defined by coordinates of overlapping environmental conditions.
+
+```{r}
+## Filter CCs depending on RDA position: which are those defined by similar environmental parameters ?
+sp_filt <- sp[(sp$RDA1 > 0 & sp$RDA2 > 0.1),]
+unique(sp_filt$CC_id) # selection of 7 CCs
+
+# Set rownames as CC id column
+sp_filt$CC_id <- rownames(sp_filt)
+
+# Merge with abundance info and location info
+CC_expl <- merge(sp_filt,df_CC_ST, by="CC_id")
+data2 <- data[,1:10]
+
+CC_expl2 <- merge(CC_expl,data2, by="CC_id")
+summary(CC_expl2)
+length(unique(CC_expl2$sample))
+
+# Subset info about each selected CC: number of samples found in Time Series, MOOSE and Malaspina
+# CC 205, Dino-Group-II
+CC_205 <- subset(CC_expl2,CC_expl2$CC_id == "205")
+mo_205 <- nrow(CC_205[CC_205$sample %like% "MGE",])
+mal_205 <- nrow(CC_205[CC_205$sample %like% "Mala",])
+TS_205 <- nrow(subset(CC_205, CC_205$sample %like% "BBMO" | CC_205$sample %like% "X"))
+biom_205 <- nrow(CC_205[CC_205$sample %like% "S0",])
+tax_205 <- unique(CC_205$Order)
+
+# CC 305, Dino-Group-II
+CC_305 <- subset(CC_expl2,CC_expl2$CC_id == "305")
+mo_305 <- nrow(CC_305[CC_305$sample %like% "MGE",])
+mal_305 <- nrow(CC_305[CC_305$sample %like% "Mala",])
+TS_305 <- nrow(subset(CC_305, CC_305$sample %like% "BBMO" | CC_305$sample %like% "X"))
+biom_305 <- nrow(CC_305[CC_305$sample %like% "S0",])
+tax_305 <- unique(CC_305$Order)
+
+# CC 51, Dino-Group-I
+CC_51 <- subset(CC_expl2,CC_expl2$CC_id == "51")
+mo_51 <- nrow(CC_51[CC_51$sample %like% "MGE",])
+mal_51 <- nrow(CC_51[CC_51$sample %like% "Mala",])
+TS_51 <- nrow(subset(CC_51, CC_51$sample %like% "BBMO" | CC_51$sample %like% "X"))
+biom_51 <- nrow(CC_51[CC_51$sample %like% "S0",])
+tax_51 <- unique(CC_51$Order)
+
+# CC 537, Dino-Group-I
+CC_537 <- subset(CC_expl2,CC_expl2$CC_id == "537")
+mo_537 <- nrow(CC_537[CC_537$sample %like% "MGE",])
+mal_537 <- nrow(CC_537[CC_537$sample %like% "Mala",])
+TS_537 <- nrow(subset(CC_537, CC_537$sample %like% "BBMO" | CC_537$sample %like% "X"))
+biom_537 <- nrow(CC_537[CC_537$sample %like% "S0",])
+tax_537 <- unique(CC_537$Order)
+
+# CC 590, Dino-Group-II
+CC_590 <- subset(CC_expl2,CC_expl2$CC_id == "590")
+mo_590 <- nrow(CC_590[CC_590$sample %like% "MGE",])
+mal_590 <- nrow(CC_590[CC_590$sample %like% "Mala",])
+TS_590 <- nrow(subset(CC_590, CC_590$sample %like% "BBMO" | CC_590$sample %like% "X"))
+biom_590 <- nrow(CC_590[CC_590$sample %like% "S0",])
+tax_590 <- unique(CC_590$Order)
+
+# CC 610, Dino-Group-I
+CC_610 <- subset(CC_expl2,CC_expl2$CC_id == "610")
+mo_610 <- nrow(CC_610[CC_610$sample %like% "MGE",])
+mal_610 <- nrow(CC_610[CC_610$sample %like% "Mala",])
+TS_610 <- nrow(subset(CC_610, CC_610$sample %like% "BBMO" | CC_610$sample %like% "X"))
+biom_610 <- nrow(CC_610[CC_610$sample %like% "S0",])
+tax_610 <- unique(CC_610$Order)
+
+# CC 610, Dino-Group-II
+CC_95 <- subset(CC_expl2,CC_expl2$CC_id == "95")
+mo_95 <- nrow(CC_95[CC_95$sample %like% "MGE",])
+mal_95 <- nrow(CC_95[CC_95$sample %like% "Mala",])
+TS_95 <- nrow(subset(CC_95, CC_95$sample %like% "BBMO" | CC_95$sample %like% "X"))
+biom_95 <- nrow(CC_95[CC_95$sample %like% "S0",])
+tax_95 <- unique(CC_95$Order)
+
+## Figure 3, Suppl
+# Create data-frame
+CC_id <- c(rep("CC_205",4), rep("CC_305",4), rep("CC_51",4), rep("CC_537",4), rep("CC_590",4), rep("CC_610",4), rep("CC_95",4))
+tax_status <- c(rep(tax_205,4),rep(tax_305,4),rep(tax_51,4),rep(tax_537,4),rep(tax_590,4),rep(tax_610,4),rep(tax_95,4))
+sample_nb <- c(mo_205, mal_205, biom_205, TS_205,
+           mo_305, mal_305, biom_305, TS_305,
+           mo_51, mal_51, biom_51, TS_51,
+           mo_537, mal_537, biom_537, TS_537,
+           mo_590, mal_590, biom_590, TS_590,
+           mo_610, mal_610, biom_610, TS_610,
+           mo_95, mal_95, biom_95, TS_95)
+sample_type <- rep(c("Oceanographic campaign: Mediterannean Sea","Oceanographic campaign: Subtropics",
+                     "Coastal: Mediterranean", "Coastal Time Series: Mediterranean Sea"),7)
+df <- data.frame(CC_id,tax_status,sample_nb,sample_type)
+
+# Plot
+ggplot(df, aes(fill=sample_type, y=sample_nb, x=CC_id)) + 
+  geom_bar(stat="identity",colour="black") +
+  scale_fill_manual(values=c("orange","darkorange2","red","turquoise4")) +
+  theme_linedraw() +
+  facet_grid(~tax_status, scales = "free_x") +
+  theme(strip.text.x = element_text(color = "white", face = "bold"), 
+        axis.ticks.x=element_blank(), axis.title.x=element_blank(),
+        axis.text.x = element_text(face = "bold", angle = 45, hjust = 1)) +
+  ylab("Number of samples") +
+  labs(fill='Sample type') +
+  theme(legend.title = element_text(face="bold"))
+```
+
